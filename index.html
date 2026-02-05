@@ -386,25 +386,25 @@
     // ═══════════════════════════════════════════════════════════════════════════
 
     const SHELF_COLORS = {
-      'Work': {
+      'Personal': {
         gradient: 'from-purple-600 via-purple-700 to-purple-900',
         accent: '#8B5CF6',
         textColor: 'text-purple-100',
         bgClass: 'bg-gradient-to-b from-purple-600 via-purple-700 to-purple-900'
       },
-      'Personal': {
+      'School': {
         gradient: 'from-blue-800 via-blue-900 to-slate-900',
         accent: '#1E40AF',
         textColor: 'text-blue-100',
         bgClass: 'bg-gradient-to-b from-blue-800 via-blue-900 to-slate-900'
       },
-      'Learning': {
+      'Beri': {
         gradient: 'from-emerald-700 via-emerald-800 to-green-900',
         accent: '#047857',
         textColor: 'text-emerald-100',
         bgClass: 'bg-gradient-to-b from-emerald-700 via-emerald-800 to-green-900'
       },
-      'Health': {
+      'AI': {
         gradient: 'from-teal-500 via-cyan-600 to-teal-700',
         accent: '#0891B2',
         textColor: 'text-teal-100',
@@ -503,7 +503,7 @@
     // ═══════════════════════════════════════════════════════════════════════════
 
     const BookSpine = ({ task, onClick, onComplete, isFlickering }) => {
-      const shelfColor = SHELF_COLORS[task.label] || SHELF_COLORS['Work'];
+      const shelfColor = SHELF_COLORS[task.label] || SHELF_COLORS['Personal'];
       const width = TIMEFRAME_WIDTHS[task.timeframe] || TIMEFRAME_WIDTHS['medium'];
 
       return (
@@ -621,7 +621,7 @@
     // ═══════════════════════════════════════════════════════════════════════════
 
     const PageSpreadModal = ({ task, onClose, onComplete, onDelete }) => {
-      const shelfColor = SHELF_COLORS[task.label] || SHELF_COLORS['Work'];
+      const shelfColor = SHELF_COLORS[task.label] || SHELF_COLORS['Personal'];
 
       const formatDate = (dateString) => {
         if (!dateString) return 'No due date';
@@ -746,7 +746,7 @@
     const AddTaskModal = ({ onClose, onAdd }) => {
       const [formData, setFormData] = useState({
         name: '',
-        label: 'Work',
+        label: 'Personal',
         description: '',
         dueDate: '',
         timeframe: 'medium'
@@ -854,7 +854,7 @@
                 {/* Due Date */}
                 <div>
                   <label className="block text-sm font-medium text-white/80 mb-1">
-                    Due Date
+                    Due Date <span className="text-white/50">(optional)</span>
                   </label>
                   <input
                     type="date"
@@ -862,6 +862,7 @@
                     onChange={(e) => setFormData({ ...formData, dueDate: e.target.value })}
                     className="w-full px-4 py-2 bg-white/10 border border-white/20 rounded-lg text-white focus:border-artisan-purple"
                   />
+                  <p className="text-xs text-white/50 mt-1">Earlier due dates appear on the left of the shelf</p>
                 </div>
 
                 {/* Timeframe (Book Thickness) */}
@@ -929,7 +930,7 @@
             <div className="space-y-3">
               <AnimatePresence>
                 {tasks.map((task) => {
-                  const shelfColor = SHELF_COLORS[task.label] || SHELF_COLORS['Work'];
+                  const shelfColor = SHELF_COLORS[task.label] || SHELF_COLORS['Personal'];
                   return (
                     <motion.div
                       key={task.id}
@@ -996,8 +997,21 @@
       const activeTasks = tasks.filter(t => !t.completed);
       const archivedTasks = tasks.filter(t => t.completed);
 
+      // Sort tasks by due date (earlier dates first, no date last)
+      const sortByDueDate = (tasks) => {
+        return [...tasks].sort((a, b) => {
+          // Tasks without due dates go to the right (end)
+          if (!a.dueDate && !b.dueDate) return 0;
+          if (!a.dueDate) return 1;
+          if (!b.dueDate) return -1;
+          // Earlier dates on the left
+          return new Date(a.dueDate) - new Date(b.dueDate);
+        });
+      };
+
       const tasksByLabel = Object.keys(SHELF_COLORS).reduce((acc, label) => {
-        acc[label] = activeTasks.filter(t => t.label === label);
+        const labelTasks = activeTasks.filter(t => t.label === label);
+        acc[label] = sortByDueDate(labelTasks);
         return acc;
       }, {});
 
