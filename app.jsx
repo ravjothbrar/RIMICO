@@ -31,7 +31,7 @@ const DEFAULT_CATEGORIES = [
 
 const TIMEFRAME_WIDTHS = { quick: 45, short: 60, medium: 75, long: 95, extended: 115 };
 
-/* ── Icons (static, never re-render) ── */
+/* ── Icons ── */
 const Icons = {
   Plus:     () => <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 4v16m8-8H4" /></svg>,
   Archive:  () => <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M5 8h14M5 8a2 2 0 110-4h14a2 2 0 110 4M5 8v10a2 2 0 002 2h10a2 2 0 002-2V8m-9 4h4" /></svg>,
@@ -41,6 +41,7 @@ const Icons = {
   Calendar: () => <svg className="w-3 h-3" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M8 7V3m8 4V3m-9 8h10M5 21h14a2 2 0 002-2V7a2 2 0 00-2-2H5a2 2 0 00-2 2v12a2 2 0 002 2z" /></svg>,
   Trash:    () => <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M19 7l-.867 12.142A2 2 0 0116.138 21H7.862a2 2 0 01-1.995-1.858L5 7m5 4v6m4-6v6m1-10V4a1 1 0 00-1-1h-4a1 1 0 00-1 1v3M4 7h16" /></svg>,
   Restore:  () => <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M3 10h10a8 8 0 018 8v2M3 10l6 6m-6-6l6-6" /></svg>,
+  Edit:     () => <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M11 5H6a2 2 0 00-2 2v11a2 2 0 002 2h11a2 2 0 002-2v-5m-1.414-9.414a2 2 0 112.828 2.828L11.828 15H9v-2.828l8.586-8.586z" /></svg>,
   User:     () => <svg className="w-3.5 h-3.5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M16 7a4 4 0 11-8 0 4 4 0 018 0zM12 14a7 7 0 00-7 7h14a7 7 0 00-7-7z" /></svg>,
   Settings: () => <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M10.325 4.317c.426-1.756 2.924-1.756 3.35 0a1.724 1.724 0 002.573 1.066c1.543-.94 3.31.826 2.37 2.37a1.724 1.724 0 001.066 2.573c1.756.426 1.756 2.924 0 3.35a1.724 1.724 0 00-1.066 2.573c.94 1.543-.826 3.31-2.37 2.37a1.724 1.724 0 00-2.573 1.066c-.426 1.756-2.924 1.756-3.35 0a1.724 1.724 0 00-2.573-1.066c-1.543.94-3.31-.826-2.37-2.37a1.724 1.724 0 00-1.066-2.573c-1.756-.426-1.756-2.924 0-3.35a1.724 1.724 0 001.066-2.573c-.94-1.543.826-3.31 2.37-2.37.996.608 2.296.07 2.572-1.065z" /><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M15 12a3 3 0 11-6 0 3 3 0 016 0z" /></svg>
 };
@@ -121,6 +122,9 @@ const AnimatedBlobs = React.memo(() => (
     <div className="blob blob-2" />
     <div className="blob blob-3" />
     <div className="blob blob-4" />
+    <div className="blob blob-5" />
+    <div className="blob blob-6" />
+    <div className="blob blob-7" />
   </div>
 ));
 
@@ -161,17 +165,13 @@ const BookSpine = ({ task, onClick, onComplete, isFlickering, shelfColors }) => 
         <div className="absolute bottom-8 left-1 right-1 h-px bg-gradient-to-r from-transparent via-yellow-300/60 to-transparent" />
         <div className="absolute bottom-9 left-2 right-2 h-px bg-gradient-to-r from-transparent via-yellow-300/40 to-transparent" />
 
-        {/* Title on spine — the key fix: proper vertical layout */}
+        {/* Title on spine */}
         <div
           className="vertical-text absolute inset-0 flex items-center justify-center px-1 py-10"
           style={{ color: 'rgba(255,255,255,0.95)' }}
         >
           <span className="font-bold text-xs tracking-wider leading-tight" style={{
-            display: '-webkit-box',
-            WebkitLineClamp: 1,
-            WebkitBoxOrient: 'vertical',
             overflow: 'hidden',
-            textOverflow: 'ellipsis',
             maxHeight: '100%',
             whiteSpace: 'nowrap'
           }}>{task.name}</span>
@@ -197,17 +197,17 @@ const ShelfQuadrant = ({ label, tasks, onBookClick, onComplete, flickeringId, sh
 
   return (
     <div className="flex flex-col h-full">
-      <div className="flex items-center gap-2 mb-1 px-2">
-        <div className="w-2.5 h-2.5 rounded-full" style={{ backgroundColor: colors.accent }} />
-        <h3 className="text-sm font-bold text-artisan-purple">{label}</h3>
-        <span className="text-xs text-gray-400">{tasks.length}</span>
+      <div className="flex items-center gap-2 mb-1 px-2 pt-1">
+        <div className="w-2.5 h-2.5 rounded-full border border-white/30" style={{ backgroundColor: colors.accent }} />
+        <h3 className="text-sm font-bold" style={{ color: '#E8D5B7' }}>{label}</h3>
+        <span className="text-xs" style={{ color: 'rgba(232,213,183,0.6)' }}>{tasks.length}</span>
       </div>
       <div className="flex-1 relative">
         <div className="custom-scrollbar overflow-x-auto h-full">
           <div className="flex items-stretch h-[calc(100%-20px)] px-2 pt-2">
             <AnimatePresence mode="popLayout">
               {tasks.length === 0 ? (
-                <div className="text-xs text-gray-400 italic px-2 self-center">Empty shelf...</div>
+                <div className="text-xs italic px-2 self-center" style={{ color: 'rgba(232,213,183,0.5)' }}>Empty shelf...</div>
               ) : (
                 tasks.map((task) => (
                   <BookSpine key={task.id} task={task} onClick={() => onBookClick(task)} onComplete={onComplete} isFlickering={flickeringId === task.id} shelfColors={colors} />
@@ -222,38 +222,103 @@ const ShelfQuadrant = ({ label, tasks, onBookClick, onComplete, flickeringId, sh
   );
 };
 
-/* ── Page Spread Modal (task detail) ── */
-const PageSpreadModal = ({ task, onClose, onComplete, onDelete, categories }) => {
+/* ── Shared Task Form (used by both Add and Edit) ── */
+const TaskForm = ({ formData, setFormData, categories, onSubmit, submitLabel }) => (
+  <form onSubmit={onSubmit} className="space-y-3">
+    <div>
+      <label className="block text-xs font-semibold text-gray-600 mb-1">Title *</label>
+      <input type="text" required value={formData.name} onChange={(e) => setFormData({ ...formData, name: e.target.value })} className="w-full px-3 py-2 bg-gray-50 border border-gray-200 rounded-lg text-sm text-gray-800 placeholder-gray-400" placeholder="Task name" />
+    </div>
+    <div>
+      <label className="block text-xs font-semibold text-gray-600 mb-1">Shelf</label>
+      <div className="flex flex-wrap gap-1">
+        {categories.map((cat) => (
+          <button key={cat.name} type="button" onClick={() => setFormData({ ...formData, label: cat.name })} className={`px-2 py-1.5 rounded-lg text-xs font-medium transition-all ${formData.label === cat.name ? 'ring-2 ring-artisan-purple bg-purple-50 text-artisan-purple' : 'bg-gray-50 text-gray-600 hover:bg-gray-100'}`}>
+            <span className="inline-block w-2 h-2 rounded-full mr-1" style={{ backgroundColor: cat.accent }} />{cat.name}
+          </button>
+        ))}
+      </div>
+    </div>
+    <div>
+      <label className="block text-xs font-semibold text-gray-600 mb-1">Description <span className="font-normal text-gray-400">(markdown)</span></label>
+      <MarkdownEditor value={formData.description} onChange={(val) => setFormData({ ...formData, description: val })} rows={2} />
+    </div>
+    <div className="grid grid-cols-2 gap-2">
+      <div>
+        <label className="block text-xs font-semibold text-gray-600 mb-1">Due Date</label>
+        <input type="date" value={formData.dueDate} onChange={(e) => setFormData({ ...formData, dueDate: e.target.value })} className="w-full px-3 py-2 bg-gray-50 border border-gray-200 rounded-lg text-sm text-gray-800" />
+      </div>
+      <div>
+        <label className="block text-xs font-semibold text-gray-600 mb-1">Timeframe</label>
+        <select value={formData.timeframe} onChange={(e) => setFormData({ ...formData, timeframe: e.target.value })} className="w-full px-3 py-2 bg-gray-50 border border-gray-200 rounded-lg text-sm text-gray-800">
+          <option value="quick">Quick</option><option value="short">Short</option><option value="medium">Medium</option><option value="long">Long</option><option value="extended">Extended</option>
+        </select>
+      </div>
+    </div>
+    <motion.button type="submit" className="w-full px-4 py-2.5 bg-artisan-purple text-white rounded-lg text-sm font-semibold hover:bg-artisan-purpleDark" whileHover={{ scale: 1.02 }} whileTap={{ scale: 0.98 }}>{submitLabel}</motion.button>
+  </form>
+);
+
+/* ── Task Detail Modal (view + edit + complete + delete) ── */
+const TaskDetailModal = ({ task, onClose, onComplete, onDelete, onEdit, categories }) => {
   const cat = (categories || []).find(c => c.name === task.label);
   const shelfColor = cat || { accent: '#8B5CF6' };
   const formatDate = (ds) => ds ? new Date(ds).toLocaleDateString('en-US', { weekday: 'short', month: 'short', day: 'numeric' }) : 'No due date';
+  const [editing, setEditing] = useState(false);
+  const [formData, setFormData] = useState({
+    name: task.name,
+    label: task.label,
+    description: task.description || '',
+    dueDate: task.dueDate || '',
+    timeframe: task.timeframe || 'medium'
+  });
+
+  const handleSave = (e) => {
+    e.preventDefault();
+    if (formData.name.trim()) {
+      onEdit(task.id, formData);
+      onClose();
+    }
+  };
 
   return (
     <motion.div className="fixed inset-0 z-50 flex items-center justify-center p-4 modal-backdrop" initial={{ opacity: 0 }} animate={{ opacity: 1 }} exit={{ opacity: 0 }} onClick={onClose}>
-      <motion.div className="page-spread relative w-full max-w-lg rounded-xl overflow-hidden" initial={{ scale: 0.9, rotateY: -45 }} animate={{ scale: 1, rotateY: 0 }} exit={{ scale: 0.9, rotateY: 45 }} transition={{ type: "spring", stiffness: 250, damping: 25 }} onClick={(e) => e.stopPropagation()}>
+      <motion.div className="bg-white relative w-full max-w-lg rounded-xl overflow-hidden shadow-xl" initial={{ scale: 0.9, y: 20 }} animate={{ scale: 1, y: 0 }} exit={{ scale: 0.9, y: 20 }} transition={{ type: "spring", stiffness: 300, damping: 25 }} onClick={(e) => e.stopPropagation()}>
         <button onClick={onClose} className="absolute top-3 right-3 w-8 h-8 rounded-full bg-gray-100 hover:bg-gray-200 flex items-center justify-center z-10"><Icons.X /></button>
         <div className="p-6">
-          <div className="flex items-start gap-3 mb-4">
-            <div className="w-1.5 h-16 rounded-full" style={{ backgroundColor: shelfColor.accent }} />
-            <div className="flex-1">
-              <span className="text-xs font-semibold uppercase tracking-wider px-2 py-0.5 rounded-full" style={{ backgroundColor: `${shelfColor.accent}15`, color: shelfColor.accent }}>{task.label}</span>
-              <h2 className="text-xl font-bold text-gray-800 mt-2">{task.name}</h2>
-              <div className="flex items-center gap-1.5 text-gray-500 text-xs mt-1"><Icons.Calendar /><span>{formatDate(task.dueDate)}</span></div>
-            </div>
-          </div>
-          <div className="border-t border-gray-200 my-4" />
-          <div className="mb-4">
-            <h4 className="text-xs font-semibold uppercase tracking-wider text-gray-400 mb-2">Description</h4>
-            <MarkdownContent content={task.description} />
-          </div>
-          <div className="mb-5">
-            <h4 className="text-xs font-semibold uppercase tracking-wider text-gray-400 mb-2">Timeframe</h4>
-            <span className="inline-flex items-center px-3 py-1 rounded-full text-xs font-semibold bg-purple-100 text-purple-700 capitalize">{task.timeframe}</span>
-          </div>
-          <div className="flex gap-2">
-            <motion.button className="flex-1 flex items-center justify-center gap-2 px-4 py-2.5 bg-artisan-purple text-white rounded-lg text-sm font-semibold hover:bg-artisan-purpleDark" whileHover={{ scale: 1.02 }} whileTap={{ scale: 0.98 }} onClick={() => { onComplete(task.id); onClose(); }}><Icons.Check />Complete</motion.button>
-            <motion.button className="flex items-center justify-center px-4 py-2.5 bg-red-50 text-red-600 rounded-lg text-sm font-semibold hover:bg-red-100" whileHover={{ scale: 1.02 }} whileTap={{ scale: 0.98 }} onClick={() => { onDelete(task.id); onClose(); }}><Icons.Trash /></motion.button>
-          </div>
+          {editing ? (
+            <>
+              <div className="flex items-center justify-between mb-4">
+                <h2 className="text-lg font-bold text-gray-800">Edit Book</h2>
+              </div>
+              <TaskForm formData={formData} setFormData={setFormData} categories={categories} onSubmit={handleSave} submitLabel="Save Changes" />
+            </>
+          ) : (
+            <>
+              <div className="flex items-start gap-3 mb-4">
+                <div className="w-1.5 h-16 rounded-full" style={{ backgroundColor: shelfColor.accent }} />
+                <div className="flex-1">
+                  <span className="text-xs font-semibold uppercase tracking-wider px-2 py-0.5 rounded-full" style={{ backgroundColor: `${shelfColor.accent}15`, color: shelfColor.accent }}>{task.label}</span>
+                  <h2 className="text-xl font-bold text-gray-800 mt-2">{task.name}</h2>
+                  <div className="flex items-center gap-1.5 text-gray-500 text-xs mt-1"><Icons.Calendar /><span>{formatDate(task.dueDate)}</span></div>
+                </div>
+              </div>
+              <div className="border-t border-gray-200 my-4" />
+              <div className="mb-4">
+                <h4 className="text-xs font-semibold uppercase tracking-wider text-gray-400 mb-2">Description</h4>
+                <MarkdownContent content={task.description} />
+              </div>
+              <div className="mb-5">
+                <h4 className="text-xs font-semibold uppercase tracking-wider text-gray-400 mb-2">Timeframe</h4>
+                <span className="inline-flex items-center px-3 py-1 rounded-full text-xs font-semibold bg-purple-100 text-purple-700 capitalize">{task.timeframe}</span>
+              </div>
+              <div className="flex gap-2">
+                <motion.button className="flex-1 flex items-center justify-center gap-2 px-4 py-2.5 bg-artisan-purple text-white rounded-lg text-sm font-semibold hover:bg-artisan-purpleDark" whileHover={{ scale: 1.02 }} whileTap={{ scale: 0.98 }} onClick={() => { onComplete(task.id); onClose(); }}><Icons.Check />Complete</motion.button>
+                <motion.button className="flex items-center justify-center gap-1 px-4 py-2.5 bg-purple-50 text-artisan-purple rounded-lg text-sm font-semibold hover:bg-purple-100" whileHover={{ scale: 1.02 }} whileTap={{ scale: 0.98 }} onClick={() => setEditing(true)}><Icons.Edit />Edit</motion.button>
+                <motion.button className="flex items-center justify-center px-4 py-2.5 bg-red-50 text-red-600 rounded-lg text-sm font-semibold hover:bg-red-100" whileHover={{ scale: 1.02 }} whileTap={{ scale: 0.98 }} onClick={() => { onDelete(task.id); onClose(); }}><Icons.Trash /></motion.button>
+              </div>
+            </>
+          )}
         </div>
       </motion.div>
     </motion.div>
@@ -273,39 +338,7 @@ const AddTaskModal = ({ onClose, onAdd, categories }) => {
             <h2 className="text-lg font-bold text-gray-800">Add Book</h2>
             <button onClick={onClose} className="w-8 h-8 rounded-full bg-gray-100 hover:bg-gray-200 flex items-center justify-center text-gray-500"><Icons.X /></button>
           </div>
-          <form onSubmit={handleSubmit} className="space-y-3">
-            <div>
-              <label className="block text-xs font-semibold text-gray-600 mb-1">Title *</label>
-              <input type="text" required value={formData.name} onChange={(e) => setFormData({ ...formData, name: e.target.value })} className="w-full px-3 py-2 bg-gray-50 border border-gray-200 rounded-lg text-sm text-gray-800 placeholder-gray-400" placeholder="Task name" />
-            </div>
-            <div>
-              <label className="block text-xs font-semibold text-gray-600 mb-1">Shelf</label>
-              <div className="flex flex-wrap gap-1">
-                {categories.map((cat) => (
-                  <button key={cat.name} type="button" onClick={() => setFormData({ ...formData, label: cat.name })} className={`px-2 py-1.5 rounded-lg text-xs font-medium transition-all ${formData.label === cat.name ? 'ring-2 ring-artisan-purple bg-purple-50 text-artisan-purple' : 'bg-gray-50 text-gray-600 hover:bg-gray-100'}`}>
-                    <span className="inline-block w-2 h-2 rounded-full mr-1" style={{ backgroundColor: cat.accent }} />{cat.name}
-                  </button>
-                ))}
-              </div>
-            </div>
-            <div>
-              <label className="block text-xs font-semibold text-gray-600 mb-1">Description <span className="font-normal text-gray-400">(markdown)</span></label>
-              <MarkdownEditor value={formData.description} onChange={(val) => setFormData({ ...formData, description: val })} rows={2} />
-            </div>
-            <div className="grid grid-cols-2 gap-2">
-              <div>
-                <label className="block text-xs font-semibold text-gray-600 mb-1">Due Date</label>
-                <input type="date" value={formData.dueDate} onChange={(e) => setFormData({ ...formData, dueDate: e.target.value })} className="w-full px-3 py-2 bg-gray-50 border border-gray-200 rounded-lg text-sm text-gray-800" />
-              </div>
-              <div>
-                <label className="block text-xs font-semibold text-gray-600 mb-1">Timeframe</label>
-                <select value={formData.timeframe} onChange={(e) => setFormData({ ...formData, timeframe: e.target.value })} className="w-full px-3 py-2 bg-gray-50 border border-gray-200 rounded-lg text-sm text-gray-800">
-                  <option value="quick">Quick</option><option value="short">Short</option><option value="medium">Medium</option><option value="long">Long</option><option value="extended">Extended</option>
-                </select>
-              </div>
-            </div>
-            <motion.button type="submit" className="w-full px-4 py-2.5 bg-artisan-purple text-white rounded-lg text-sm font-semibold hover:bg-artisan-purpleDark" whileHover={{ scale: 1.02 }} whileTap={{ scale: 0.98 }}>Add to Library</motion.button>
-          </form>
+          <TaskForm formData={formData} setFormData={setFormData} categories={categories} onSubmit={handleSubmit} submitLabel="Add to Library" />
         </div>
       </motion.div>
     </motion.div>
@@ -436,6 +469,9 @@ const App = () => {
   const handleRestore = useCallback((taskId) => setTasks(prev => prev.map(t => t.id === taskId ? { ...t, completed: false, completedAt: null } : t)), [setTasks]);
   const handleDelete = useCallback((taskId) => setTasks(prev => prev.filter(t => t.id !== taskId)), [setTasks]);
   const handleAddTask = useCallback((newTask) => setTasks(prev => [...prev, newTask]), [setTasks]);
+  const handleEditTask = useCallback((taskId, updates) => {
+    setTasks(prev => prev.map(t => t.id === taskId ? { ...t, ...updates } : t));
+  }, [setTasks]);
   const goToLibrary = useCallback(() => setActiveView('library'), []);
 
   // Grid layout based on category count
@@ -479,7 +515,7 @@ const App = () => {
             <motion.div key="library" className={needsScroll ? 'h-full overflow-y-auto custom-scrollbar' : 'h-full'} initial={{ opacity: 0 }} animate={{ opacity: 1 }} exit={{ opacity: 0 }}>
               <div style={gridStyle}>
                 {categories.map((cat) => (
-                  <div key={cat.name} className="bg-white/50 rounded-xl p-2 overflow-hidden border border-white/60" style={needsScroll ? { minHeight: '200px' } : {}}>
+                  <div key={cat.name} className="shelf-quadrant rounded-xl p-2 overflow-hidden" style={needsScroll ? { minHeight: '200px' } : {}}>
                     <ShelfQuadrant label={cat.name} tasks={tasksByLabel[cat.name] || []} onBookClick={setSelectedTask} onComplete={handleComplete} flickeringId={flickeringId} shelfColors={cat} />
                   </div>
                 ))}
@@ -495,7 +531,7 @@ const App = () => {
 
       <AnimatePresence>
         {showAddModal && <AddTaskModal onClose={() => setShowAddModal(false)} onAdd={handleAddTask} categories={categories} />}
-        {selectedTask && <PageSpreadModal task={selectedTask} onClose={() => setSelectedTask(null)} onComplete={handleComplete} onDelete={handleDelete} categories={categories} />}
+        {selectedTask && <TaskDetailModal task={selectedTask} onClose={() => setSelectedTask(null)} onComplete={handleComplete} onDelete={handleDelete} onEdit={handleEditTask} categories={categories} />}
         {showCategoryManager && <CategoryManagerModal onClose={() => setShowCategoryManager(false)} categories={categories} onSave={setCategories} />}
       </AnimatePresence>
     </div>
