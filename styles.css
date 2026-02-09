@@ -17,7 +17,7 @@ html, body, #root {
   overflow: hidden;
 }
 
-/* Blob container — NO goo filter (major perf win) */
+/* Blob container */
 .blob-container {
   position: absolute;
   inset: 0;
@@ -25,48 +25,55 @@ html, body, #root {
   z-index: 0;
 }
 
-/* Animated Lilac Blobs — fewer, GPU-optimised */
+/* Animated Lilac Blobs — more, spread out, slightly darker */
 .blob {
   position: absolute;
   border-radius: 50%;
-  opacity: 0.55;
+  opacity: 0.5;
   will-change: transform;
 }
 
 .blob-1 {
-  width: 380px;
-  height: 380px;
-  background: radial-gradient(circle at 30% 30%, #EDE9FE 0%, #DDD6FE 50%, #E5DEFF 100%);
-  top: -5%;
-  left: -5%;
-  animation: float1 25s ease-in-out infinite;
+  width: 340px; height: 340px;
+  background: radial-gradient(circle at 30% 30%, #DDD6FE 0%, #C4B5FD 50%, #DDD6FE 100%);
+  top: -8%; left: -6%;
+  animation: float1 26s ease-in-out infinite;
 }
-
 .blob-2 {
-  width: 320px;
-  height: 320px;
-  background: radial-gradient(circle at 70% 30%, #F3F0FF 0%, #EDE9FE 50%, #DDD6FE 100%);
-  top: 10%;
-  right: -8%;
+  width: 280px; height: 280px;
+  background: radial-gradient(circle at 70% 30%, #E9E5FF 0%, #DDD6FE 50%, #D0C7FE 100%);
+  top: 5%; right: 15%;
   animation: float2 30s ease-in-out infinite;
 }
-
 .blob-3 {
-  width: 280px;
-  height: 280px;
-  background: radial-gradient(circle at 50% 50%, #DDD6FE 0%, #E5DEFF 50%, #EDE9FE 100%);
-  bottom: -10%;
-  left: 15%;
-  animation: float3 22s ease-in-out infinite;
+  width: 260px; height: 260px;
+  background: radial-gradient(circle at 50% 50%, #D0C7FE 0%, #DDD6FE 50%, #E5DEFF 100%);
+  bottom: -6%; left: 30%;
+  animation: float3 23s ease-in-out infinite;
 }
-
 .blob-4 {
-  width: 240px;
-  height: 240px;
-  background: radial-gradient(circle at 40% 60%, #F3F0FF 0%, #EDE9FE 50%, #DDD6FE 100%);
-  bottom: 20%;
-  right: 10%;
+  width: 220px; height: 220px;
+  background: radial-gradient(circle at 40% 60%, #E5DEFF 0%, #DDD6FE 50%, #D0C7FE 100%);
+  bottom: 25%; right: -4%;
   animation: float4 28s ease-in-out infinite;
+}
+.blob-5 {
+  width: 200px; height: 200px;
+  background: radial-gradient(circle at 60% 40%, #D0C7FE 0%, #C4B5FD 60%, #DDD6FE 100%);
+  top: 45%; left: 8%;
+  animation: float5 21s ease-in-out infinite;
+}
+.blob-6 {
+  width: 240px; height: 240px;
+  background: radial-gradient(circle at 30% 70%, #DDD6FE 0%, #D0C7FE 50%, #C4B5FD 100%);
+  top: 15%; left: 45%;
+  animation: float6 25s ease-in-out infinite;
+}
+.blob-7 {
+  width: 180px; height: 180px;
+  background: radial-gradient(circle at 50% 30%, #E5DEFF 0%, #DDD6FE 50%, #D0C7FE 100%);
+  bottom: 10%; right: 30%;
+  animation: float7 27s ease-in-out infinite;
 }
 
 @keyframes float1 {
@@ -75,26 +82,41 @@ html, body, #root {
   50% { transform: translate(40px, 120px) scale(0.95); }
   75% { transform: translate(-40px, 80px) scale(1.04); }
 }
-
 @keyframes float2 {
   0%, 100% { transform: translate(0, 0) scale(1); }
   25% { transform: translate(-70px, 80px) scale(1.05); }
   50% { transform: translate(-100px, 40px) scale(1.08); }
   75% { transform: translate(-50px, -40px) scale(0.95); }
 }
-
 @keyframes float3 {
   0%, 100% { transform: translate(0, 0) scale(1); }
   25% { transform: translate(60px, -50px) scale(1.06); }
   50% { transform: translate(120px, -80px) scale(0.93); }
   75% { transform: translate(40px, -30px) scale(1.03); }
 }
-
 @keyframes float4 {
   0%, 100% { transform: translate(0, 0) scale(1); }
   25% { transform: translate(-60px, -70px) scale(0.95); }
   50% { transform: translate(-30px, 50px) scale(1.08); }
   75% { transform: translate(40px, -20px) scale(1.02); }
+}
+@keyframes float5 {
+  0%, 100% { transform: translate(0, 0) scale(1); }
+  25% { transform: translate(50px, -40px) scale(1.1); }
+  50% { transform: translate(70px, 30px) scale(0.92); }
+  75% { transform: translate(20px, 60px) scale(1.04); }
+}
+@keyframes float6 {
+  0%, 100% { transform: translate(0, 0) scale(1); }
+  25% { transform: translate(-50px, -40px) scale(1.06); }
+  50% { transform: translate(-30px, -80px) scale(0.94); }
+  75% { transform: translate(25px, -50px) scale(1.07); }
+}
+@keyframes float7 {
+  0%, 100% { transform: translate(0, 0) scale(1); }
+  25% { transform: translate(-35px, 50px) scale(0.94); }
+  50% { transform: translate(45px, 40px) scale(1.1); }
+  75% { transform: translate(25px, -25px) scale(1.02); }
 }
 
 /* Header mini-blobs — pure CSS, no JS overhead */
@@ -126,10 +148,27 @@ html, body, #root {
   overflow: hidden;
 }
 
-/* Mahogany Shelf */
+/* Mahogany Shelf Ledge */
 .shelf {
   background: linear-gradient(180deg, #8B7355 0%, #6B4423 30%, #4A2C2A 50%, #6B4423 70%, #8B7355 100%);
   box-shadow: 0 4px 12px rgba(0,0,0,0.25), inset 0 1px 2px rgba(255,255,255,0.1);
+}
+
+/* Mahogany Shelf Quadrant Background */
+.shelf-quadrant {
+  background: linear-gradient(180deg,
+    #5C3A1E 0%,
+    #6B4423 8%,
+    #7A5533 20%,
+    #6B4423 50%,
+    #5C3A1E 80%,
+    #4A2C2A 100%
+  );
+  box-shadow:
+    inset 0 2px 8px rgba(0,0,0,0.4),
+    inset 0 -2px 6px rgba(0,0,0,0.3),
+    0 2px 8px rgba(0,0,0,0.15);
+  border: 1px solid rgba(139,92,50,0.3);
 }
 
 /* 3D Book Spine */
@@ -207,12 +246,6 @@ html, body, #root {
 /* Modal Backdrop — simple overlay, no blur */
 .modal-backdrop {
   background: rgba(0,0,0,0.4);
-}
-
-/* Book Page Spread */
-.page-spread {
-  background: linear-gradient(90deg, #FEFEFE 0%, #F8F8F8 49%, #E5E5E5 49%, #E5E5E5 51%, #F8F8F8 51%, #FEFEFE 100%);
-  box-shadow: 0 20px 40px rgba(0,0,0,0.2);
 }
 
 /* Focus States */
