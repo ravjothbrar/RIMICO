@@ -1,0 +1,253 @@
+* {
+  box-sizing: border-box;
+}
+
+html, body, #root {
+  margin: 0;
+  padding: 0;
+  height: 100vh;
+  overflow: hidden;
+  font-family: 'Inter', sans-serif;
+}
+
+/* Liquid Background with Purple Theme */
+.liquid-bg {
+  background: linear-gradient(135deg, #FAF8FF 0%, #F5F0FF 50%, #EDE5FF 100%);
+  position: relative;
+  overflow: hidden;
+}
+
+/* Blob container — NO goo filter (major perf win) */
+.blob-container {
+  position: absolute;
+  inset: 0;
+  pointer-events: none;
+  z-index: 0;
+}
+
+/* Animated Lilac Blobs — fewer, GPU-optimised */
+.blob {
+  position: absolute;
+  border-radius: 50%;
+  opacity: 0.55;
+  will-change: transform;
+}
+
+.blob-1 {
+  width: 380px;
+  height: 380px;
+  background: radial-gradient(circle at 30% 30%, #EDE9FE 0%, #DDD6FE 50%, #E5DEFF 100%);
+  top: -5%;
+  left: -5%;
+  animation: float1 25s ease-in-out infinite;
+}
+
+.blob-2 {
+  width: 320px;
+  height: 320px;
+  background: radial-gradient(circle at 70% 30%, #F3F0FF 0%, #EDE9FE 50%, #DDD6FE 100%);
+  top: 10%;
+  right: -8%;
+  animation: float2 30s ease-in-out infinite;
+}
+
+.blob-3 {
+  width: 280px;
+  height: 280px;
+  background: radial-gradient(circle at 50% 50%, #DDD6FE 0%, #E5DEFF 50%, #EDE9FE 100%);
+  bottom: -10%;
+  left: 15%;
+  animation: float3 22s ease-in-out infinite;
+}
+
+.blob-4 {
+  width: 240px;
+  height: 240px;
+  background: radial-gradient(circle at 40% 60%, #F3F0FF 0%, #EDE9FE 50%, #DDD6FE 100%);
+  bottom: 20%;
+  right: 10%;
+  animation: float4 28s ease-in-out infinite;
+}
+
+@keyframes float1 {
+  0%, 100% { transform: translate(0, 0) scale(1); }
+  25% { transform: translate(80px, 60px) scale(1.08); }
+  50% { transform: translate(40px, 120px) scale(0.95); }
+  75% { transform: translate(-40px, 80px) scale(1.04); }
+}
+
+@keyframes float2 {
+  0%, 100% { transform: translate(0, 0) scale(1); }
+  25% { transform: translate(-70px, 80px) scale(1.05); }
+  50% { transform: translate(-100px, 40px) scale(1.08); }
+  75% { transform: translate(-50px, -40px) scale(0.95); }
+}
+
+@keyframes float3 {
+  0%, 100% { transform: translate(0, 0) scale(1); }
+  25% { transform: translate(60px, -50px) scale(1.06); }
+  50% { transform: translate(120px, -80px) scale(0.93); }
+  75% { transform: translate(40px, -30px) scale(1.03); }
+}
+
+@keyframes float4 {
+  0%, 100% { transform: translate(0, 0) scale(1); }
+  25% { transform: translate(-60px, -70px) scale(0.95); }
+  50% { transform: translate(-30px, 50px) scale(1.08); }
+  75% { transform: translate(40px, -20px) scale(1.02); }
+}
+
+/* Header mini-blobs — pure CSS, no JS overhead */
+.header-blob {
+  position: absolute;
+  border-radius: 50%;
+  background: radial-gradient(circle, rgba(139,92,246,0.3) 0%, rgba(221,214,254,0.15) 100%);
+  pointer-events: none;
+  will-change: transform;
+}
+
+.header-blob-1 { width: 12px; height: 12px; top: 20%; left: 8%; animation: hblob1 6s ease-in-out infinite; }
+.header-blob-2 { width: 16px; height: 16px; top: 60%; left: 25%; animation: hblob2 8s ease-in-out infinite; }
+.header-blob-3 { width: 10px; height: 10px; top: 30%; left: 50%; animation: hblob3 5s ease-in-out infinite; }
+.header-blob-4 { width: 14px; height: 14px; top: 70%; left: 72%; animation: hblob4 7s ease-in-out infinite; }
+.header-blob-5 { width: 9px; height: 9px; top: 40%; left: 90%; animation: hblob5 6.5s ease-in-out infinite; }
+
+@keyframes hblob1 { 0%,100%{transform:translate(0,0)} 33%{transform:translate(25px,8px)} 66%{transform:translate(-15px,-6px)} }
+@keyframes hblob2 { 0%,100%{transform:translate(0,0)} 33%{transform:translate(-20px,-10px)} 66%{transform:translate(18px,5px)} }
+@keyframes hblob3 { 0%,100%{transform:translate(0,0)} 33%{transform:translate(15px,12px)} 66%{transform:translate(-22px,-4px)} }
+@keyframes hblob4 { 0%,100%{transform:translate(0,0)} 33%{transform:translate(-18px,7px)} 66%{transform:translate(12px,-10px)} }
+@keyframes hblob5 { 0%,100%{transform:translate(0,0)} 33%{transform:translate(20px,-8px)} 66%{transform:translate(-10px,12px)} }
+
+/* Purple Banner */
+.purple-banner {
+  background: linear-gradient(90deg, #EDE9FE 0%, #DDD6FE 50%, #EDE9FE 100%);
+  border-bottom: 1px solid rgba(139, 92, 246, 0.2);
+  position: relative;
+  overflow: hidden;
+}
+
+/* Mahogany Shelf */
+.shelf {
+  background: linear-gradient(180deg, #8B7355 0%, #6B4423 30%, #4A2C2A 50%, #6B4423 70%, #8B7355 100%);
+  box-shadow: 0 4px 12px rgba(0,0,0,0.25), inset 0 1px 2px rgba(255,255,255,0.1);
+}
+
+/* 3D Book Spine */
+.book-spine {
+  transform-style: preserve-3d;
+  perspective: 800px;
+}
+
+.book-spine-inner {
+  transform: rotateY(-4deg);
+  box-shadow: 4px 4px 10px rgba(0,0,0,0.35), -2px 0 4px rgba(0,0,0,0.15), inset -4px 0 8px rgba(0,0,0,0.25), inset 2px 0 4px rgba(255,255,255,0.1);
+  border-radius: 2px 4px 4px 2px;
+}
+
+/* Left edge shadow (binding) */
+.book-spine-inner::before {
+  content: '';
+  position: absolute;
+  left: 0;
+  top: 0;
+  bottom: 0;
+  width: 5px;
+  background: linear-gradient(90deg, rgba(0,0,0,0.5) 0%, rgba(0,0,0,0.05) 100%);
+  border-radius: 2px 0 0 2px;
+}
+
+/* Top edge highlight (page edges from top) */
+.book-spine-inner::after {
+  content: '';
+  position: absolute;
+  top: 0;
+  left: 3px;
+  right: 0;
+  height: 6px;
+  background: linear-gradient(180deg, rgba(255,255,255,0.3) 0%, rgba(255,255,255,0.05) 60%, transparent 100%);
+  border-radius: 0 4px 0 0;
+}
+
+/* Vertical Text for Book Spines */
+.vertical-text {
+  writing-mode: vertical-rl;
+  text-orientation: mixed;
+  transform: rotate(180deg);
+  overflow: hidden;
+}
+
+/* Page Flicker Animation */
+@keyframes pageFlicker {
+  0%, 100% { transform: scaleX(1); opacity: 1; }
+  25% { transform: scaleX(0.96); opacity: 0.9; }
+  50% { transform: scaleX(1.02); opacity: 1; }
+  75% { transform: scaleX(0.98); opacity: 0.92; }
+}
+
+.page-flicker {
+  animation: pageFlicker 0.5s ease-in-out;
+}
+
+/* Custom Scrollbar */
+.custom-scrollbar::-webkit-scrollbar {
+  height: 4px;
+  width: 4px;
+}
+
+.custom-scrollbar::-webkit-scrollbar-track {
+  background: rgba(139, 92, 246, 0.1);
+  border-radius: 2px;
+}
+
+.custom-scrollbar::-webkit-scrollbar-thumb {
+  background: #8B5CF6;
+  border-radius: 2px;
+}
+
+/* Modal Backdrop — simple overlay, no blur */
+.modal-backdrop {
+  background: rgba(0,0,0,0.4);
+}
+
+/* Book Page Spread */
+.page-spread {
+  background: linear-gradient(90deg, #FEFEFE 0%, #F8F8F8 49%, #E5E5E5 49%, #E5E5E5 51%, #F8F8F8 51%, #FEFEFE 100%);
+  box-shadow: 0 20px 40px rgba(0,0,0,0.2);
+}
+
+/* Focus States */
+input:focus, button:focus, select:focus, textarea:focus {
+  outline: none;
+  box-shadow: 0 0 0 2px rgba(139, 92, 246, 0.3);
+}
+
+/* Markdown Styles */
+.markdown-content strong { font-weight: 600; }
+.markdown-content em { font-style: italic; }
+.markdown-content p { margin-bottom: 0.5rem; }
+.markdown-content code {
+  background: rgba(139, 92, 246, 0.1);
+  padding: 0.125rem 0.25rem;
+  border-radius: 0.25rem;
+  font-size: 0.8rem;
+}
+
+/* Attribution Button */
+.attribution-btn {
+  border: 1.5px solid rgba(139, 92, 246, 0.25);
+  transition: all 0.2s ease;
+}
+.attribution-btn:hover {
+  border-color: #8B5CF6;
+  background: rgba(139, 92, 246, 0.08);
+}
+
+/* Title Click Effect */
+.title-link {
+  cursor: pointer;
+  transition: all 0.2s ease;
+}
+.title-link:hover {
+  transform: scale(1.02);
+  text-shadow: 0 2px 8px rgba(139, 92, 246, 0.3);
+}
