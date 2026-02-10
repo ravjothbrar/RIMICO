@@ -625,8 +625,8 @@ const TaskDetailModal = ({ task, onClose, onComplete, onDelete, onEdit, categori
   return (
     <motion.div className="fixed inset-0 z-50 flex items-center justify-center p-4 modal-backdrop" initial={{ opacity: 0 }} animate={{ opacity: 1 }} exit={{ opacity: 0 }} onClick={onClose}>
       <motion.div
-        className="book-cover relative w-full max-w-md shadow-2xl"
-        style={{ background: `linear-gradient(135deg, ${accent} 0%, ${bgDark} 50%, ${bgDarker} 100%)` }}
+        className="book-cover relative w-full max-w-xs shadow-2xl flex flex-col"
+        style={{ background: `linear-gradient(170deg, ${accent} 0%, ${bgDark} 45%, ${bgDarker} 100%)` }}
         initial={{ scale: 0.9, y: 20, rotateY: 10 }}
         animate={{ scale: 1, y: 0, rotateY: 0 }}
         exit={{ scale: 0.9, y: 20, rotateY: -10 }}
@@ -634,38 +634,38 @@ const TaskDetailModal = ({ task, onClose, onComplete, onDelete, onEdit, categori
         onClick={(e) => e.stopPropagation()}
       >
         {/* Close button */}
-        <button onClick={onClose} className="absolute top-3 right-3 w-7 h-7 rounded-full bg-white/15 hover:bg-white/25 flex items-center justify-center z-10 text-white/80 hover:text-white transition-colors"><Icons.X /></button>
+        <button onClick={onClose} className="absolute top-3 right-3 w-6 h-6 rounded-full bg-white/15 hover:bg-white/25 flex items-center justify-center z-10 text-white/80 hover:text-white transition-colors"><Icons.X /></button>
 
         {editing ? (
-          <div className="p-6 bg-white rounded-r-xl" style={{ borderRadius: '4px 12px 12px 4px' }}>
-            <h2 className="text-lg font-bold text-gray-800 mb-4">Edit Book</h2>
+          <div className="p-5 bg-white flex-1 overflow-y-auto custom-scrollbar" style={{ borderRadius: '3px 6px 6px 3px' }}>
+            <h2 className="text-base font-bold text-gray-800 mb-3">Edit Book</h2>
             <TaskForm formData={formData} setFormData={setFormData} categories={categories} onSubmit={handleSave} submitLabel="Save Changes" />
           </div>
         ) : (
-          <div className="p-6 pl-8 relative z-1">
+          <div className="flex flex-col flex-1 px-5 pl-7 py-5 relative z-1 overflow-y-auto custom-scrollbar">
             {/* Top gold rule */}
-            <div className="h-px mb-5" style={{ background: `linear-gradient(to right, transparent, rgba(218,165,32,0.5), transparent)` }} />
+            <div className="h-px mb-4 flex-shrink-0" style={{ background: 'linear-gradient(to right, transparent, rgba(218,165,32,0.5), transparent)' }} />
 
             {/* Shelf badge */}
-            <div className="inline-block px-3 py-1 rounded-full text-xs font-bold uppercase tracking-widest mb-4" style={{ background: 'rgba(255,255,255,0.12)', color: 'rgba(255,255,255,0.9)', border: '1px solid rgba(255,255,255,0.15)' }}>
+            <div className="inline-block self-start px-2.5 py-0.5 rounded-full text-[10px] font-bold uppercase tracking-widest mb-3 flex-shrink-0" style={{ background: 'rgba(255,255,255,0.12)', color: 'rgba(255,255,255,0.9)', border: '1px solid rgba(255,255,255,0.15)' }}>
               {task.label}
             </div>
 
             {/* Title */}
-            <h2 className="text-2xl font-extrabold text-white mb-1 leading-tight" style={{ textShadow: '0 2px 8px rgba(0,0,0,0.3)' }}>{task.name}</h2>
+            <h2 className="text-xl font-extrabold text-white mb-1 leading-tight flex-shrink-0" style={{ textShadow: '0 2px 8px rgba(0,0,0,0.3)' }}>{task.name}</h2>
 
             {/* Due date */}
-            <div className="flex items-center gap-1.5 text-white/60 text-xs mb-5">
+            <div className="flex items-center gap-1.5 text-white/60 text-[11px] mb-4 flex-shrink-0">
               <Icons.Calendar /><span>{formatDate(task.dueDate)}</span>
               <span className="mx-1 text-white/30">&middot;</span>
               <span className="capitalize">{task.timeframe}</span>
             </div>
 
             {/* Gold rule */}
-            <div className="h-px mb-4" style={{ background: 'linear-gradient(to right, rgba(218,165,32,0.4), rgba(218,165,32,0.15), transparent)' }} />
+            <div className="h-px mb-3 flex-shrink-0" style={{ background: 'linear-gradient(to right, rgba(218,165,32,0.4), rgba(218,165,32,0.15), transparent)' }} />
 
-            {/* Blurb / Description */}
-            <div className="book-blurb text-sm mb-5 min-h-[60px]">
+            {/* Blurb / Description — fills middle of book */}
+            <div className="book-blurb text-sm flex-1 min-h-0">
               {task.description ? (
                 <div dangerouslySetInnerHTML={{ __html: marked.parse(task.description, { breaks: true }) }} />
               ) : (
@@ -674,40 +674,40 @@ const TaskDetailModal = ({ task, onClose, onComplete, onDelete, onEdit, categori
             </div>
 
             {/* Bottom gold rule */}
-            <div className="h-px mb-4" style={{ background: 'linear-gradient(to right, transparent, rgba(218,165,32,0.4), transparent)' }} />
+            <div className="h-px my-3 flex-shrink-0" style={{ background: 'linear-gradient(to right, transparent, rgba(218,165,32,0.4), transparent)' }} />
 
             {/* ISBN / barcode area */}
-            <div className="flex items-end justify-between mb-5">
+            <div className="flex items-end justify-between mb-4 flex-shrink-0">
               <div>
-                <div className="text-white/30 text-[9px] uppercase tracking-widest mb-1">Artisan Library</div>
-                <div className="font-mono text-white/40 text-[10px]">{isbn}</div>
+                <div className="text-white/30 text-[8px] uppercase tracking-widest mb-0.5">Artisan Library</div>
+                <div className="font-mono text-white/40 text-[9px]">{isbn}</div>
               </div>
               {/* Mini barcode decoration */}
-              <div className="flex items-end gap-px h-6 opacity-30">
-                {[3,5,2,4,6,3,5,2,4,3,6,2,5,4,3,5,2,6,3,4].map((h, i) => (
-                  <div key={i} className="bg-white" style={{ width: i % 3 === 0 ? '2px' : '1px', height: `${h * 4}px` }} />
+              <div className="flex items-end gap-px h-5 opacity-30">
+                {[3,5,2,4,6,3,5,2,4,3,6,2,5,4,3,5,2,6,3,4].map((bh, i) => (
+                  <div key={i} className="bg-white" style={{ width: i % 3 === 0 ? '2px' : '1px', height: `${bh * 3}px` }} />
                 ))}
               </div>
             </div>
 
             {/* Action buttons */}
-            <div className="flex gap-2">
+            <div className="flex gap-1.5 flex-shrink-0">
               <motion.button
-                className="flex-1 flex items-center justify-center gap-2 px-4 py-2.5 rounded-lg text-sm font-semibold transition-colors"
+                className="flex-1 flex items-center justify-center gap-1.5 px-3 py-2 rounded-md text-xs font-semibold transition-colors"
                 style={{ background: 'rgba(255,255,255,0.15)', color: 'white', border: '1px solid rgba(255,255,255,0.2)' }}
                 whileHover={{ scale: 1.02, backgroundColor: 'rgba(255,255,255,0.25)' }}
                 whileTap={{ scale: 0.98 }}
                 onClick={() => { onComplete(task.id); onClose(); }}
               ><Icons.Check />Complete</motion.button>
               <motion.button
-                className="flex items-center justify-center gap-1 px-4 py-2.5 rounded-lg text-sm font-semibold transition-colors"
+                className="flex items-center justify-center gap-1 px-3 py-2 rounded-md text-xs font-semibold transition-colors"
                 style={{ background: 'rgba(255,255,255,0.08)', color: 'rgba(255,255,255,0.8)', border: '1px solid rgba(255,255,255,0.1)' }}
                 whileHover={{ scale: 1.02 }}
                 whileTap={{ scale: 0.98 }}
                 onClick={() => setEditing(true)}
-              ><Icons.Edit />Edit</motion.button>
+              ><Icons.Edit /></motion.button>
               <motion.button
-                className="flex items-center justify-center px-3 py-2.5 rounded-lg text-sm font-semibold transition-colors"
+                className="flex items-center justify-center px-3 py-2 rounded-md text-xs font-semibold transition-colors"
                 style={{ background: 'rgba(255,70,70,0.15)', color: 'rgba(255,180,180,0.9)', border: '1px solid rgba(255,100,100,0.2)' }}
                 whileHover={{ scale: 1.02 }}
                 whileTap={{ scale: 0.98 }}
@@ -716,7 +716,7 @@ const TaskDetailModal = ({ task, onClose, onComplete, onDelete, onEdit, categori
             </div>
 
             {/* Bottom gold rule */}
-            <div className="h-px mt-5" style={{ background: `linear-gradient(to right, transparent, rgba(218,165,32,0.5), transparent)` }} />
+            <div className="h-px mt-4 flex-shrink-0" style={{ background: 'linear-gradient(to right, transparent, rgba(218,165,32,0.5), transparent)' }} />
           </div>
         )}
       </motion.div>
