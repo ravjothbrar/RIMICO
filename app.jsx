@@ -43,7 +43,9 @@ const Icons = {
   Restore:  () => <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M3 10h10a8 8 0 018 8v2M3 10l6 6m-6-6l6-6" /></svg>,
   Edit:     () => <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M11 5H6a2 2 0 00-2 2v11a2 2 0 002 2h11a2 2 0 002-2v-5m-1.414-9.414a2 2 0 112.828 2.828L11.828 15H9v-2.828l8.586-8.586z" /></svg>,
   User:     () => <svg className="w-3.5 h-3.5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M16 7a4 4 0 11-8 0 4 4 0 018 0zM12 14a7 7 0 00-7 7h14a7 7 0 00-7-7z" /></svg>,
-  Settings: () => <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M10.325 4.317c.426-1.756 2.924-1.756 3.35 0a1.724 1.724 0 002.573 1.066c1.543-.94 3.31.826 2.37 2.37a1.724 1.724 0 001.066 2.573c1.756.426 1.756 2.924 0 3.35a1.724 1.724 0 00-1.066 2.573c.94 1.543-.826 3.31-2.37 2.37a1.724 1.724 0 00-2.573 1.066c-.426 1.756-2.924 1.756-3.35 0a1.724 1.724 0 00-2.573-1.066c-1.543.94-3.31-.826-2.37-2.37a1.724 1.724 0 00-1.066-2.573c-1.756-.426-1.756-2.924 0-3.35a1.724 1.724 0 001.066-2.573c-.94-1.543.826-3.31 2.37-2.37.996.608 2.296.07 2.572-1.065z" /><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M15 12a3 3 0 11-6 0 3 3 0 016 0z" /></svg>
+  Settings: () => <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M10.325 4.317c.426-1.756 2.924-1.756 3.35 0a1.724 1.724 0 002.573 1.066c1.543-.94 3.31.826 2.37 2.37a1.724 1.724 0 001.066 2.573c1.756.426 1.756 2.924 0 3.35a1.724 1.724 0 00-1.066 2.573c.94 1.543-.826 3.31-2.37 2.37a1.724 1.724 0 00-2.573 1.066c-.426 1.756-2.924 1.756-3.35 0a1.724 1.724 0 00-2.573-1.066c-1.543.94-3.31-.826-2.37-2.37a1.724 1.724 0 00-1.066-2.573c-1.756-.426-1.756-2.924 0-3.35a1.724 1.724 0 001.066-2.573c-.94-1.543.826-3.31 2.37-2.37.996.608 2.296.07 2.572-1.065z" /><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M15 12a3 3 0 11-6 0 3 3 0 016 0z" /></svg>,
+  Cube3D: () => <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M21 16V8a2 2 0 00-1-1.73l-7-4a2 2 0 00-2 0l-7 4A2 2 0 003 8v8a2 2 0 001 1.73l7 4a2 2 0 002 0l7-4A2 2 0 0021 16z" /><polyline strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} points="3.27 6.96 12 12.01 20.73 6.96" /><line strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} x1="12" y1="22.08" x2="12" y2="12" /></svg>,
+  Grid2D: () => <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M4 6a2 2 0 012-2h2a2 2 0 012 2v2a2 2 0 01-2 2H6a2 2 0 01-2-2V6zm10 0a2 2 0 012-2h2a2 2 0 012 2v2a2 2 0 01-2 2h-2a2 2 0 01-2-2V6zM4 16a2 2 0 012-2h2a2 2 0 012 2v2a2 2 0 01-2 2H6a2 2 0 01-2-2v-2zm10 0a2 2 0 012-2h2a2 2 0 012 2v2a2 2 0 01-2 2h-2a2 2 0 01-2-2v-2z" /></svg>
 };
 
 /* ── Small components ── */
@@ -191,6 +193,30 @@ const BookSpine = ({ task, onClick, onComplete, isFlickering, shelfColors }) => 
   );
 };
 
+/* ── Placeholder Ghost Books ── */
+const PlaceholderBooks = ({ count }) => {
+  const ghostBooks = useMemo(() => {
+    const presets = [
+      { w: 38, h: '75%' }, { w: 52, h: '88%' }, { w: 44, h: '68%' },
+      { w: 60, h: '92%' }, { w: 35, h: '60%' }, { w: 48, h: '82%' },
+      { w: 55, h: '70%' }, { w: 42, h: '95%' }, { w: 50, h: '65%' },
+      { w: 46, h: '78%' }, { w: 58, h: '85%' }, { w: 40, h: '72%' }
+    ];
+    return Array.from({ length: count }, (_, i) => presets[i % presets.length]);
+  }, [count]);
+
+  return ghostBooks.map((book, i) => (
+    <div
+      key={`ghost-${i}`}
+      className="ghost-book mx-0.5 self-end"
+      style={{ width: `${book.w}px`, height: book.h }}
+    >
+      {/* Bottom decorative line */}
+      <div className="absolute bottom-6 left-3 right-3 h-px" style={{ background: 'linear-gradient(to right, transparent, rgba(255,255,255,0.07), transparent)' }} />
+    </div>
+  ));
+};
+
 /* ── Shelf Quadrant ── */
 const ShelfQuadrant = ({ label, tasks, onBookClick, onComplete, flickeringId, shelfColors }) => {
   const colors = shelfColors || { accent: '#8B5CF6' };
@@ -206,19 +232,476 @@ const ShelfQuadrant = ({ label, tasks, onBookClick, onComplete, flickeringId, sh
         <div className="custom-scrollbar overflow-x-auto h-full">
           <div className="flex items-stretch h-[calc(100%-20px)] px-2 pt-2">
             <AnimatePresence mode="popLayout">
-              {tasks.length === 0 ? (
-                <div className="text-xs italic px-2 self-center" style={{ color: 'rgba(232,213,183,0.5)' }}>Empty shelf...</div>
-              ) : (
-                tasks.map((task) => (
-                  <BookSpine key={task.id} task={task} onClick={() => onBookClick(task)} onComplete={onComplete} isFlickering={flickeringId === task.id} shelfColors={colors} />
-                ))
-              )}
+              {tasks.map((task) => (
+                <BookSpine key={task.id} task={task} onClick={() => onBookClick(task)} onComplete={onComplete} isFlickering={flickeringId === task.id} shelfColors={colors} />
+              ))}
             </AnimatePresence>
+            <PlaceholderBooks count={Math.max(2, 6 - tasks.length)} />
           </div>
         </div>
         <div className="shelf absolute bottom-0 left-1 right-1 h-5 rounded-b-sm" />
       </div>
     </div>
+  );
+};
+
+/* ── 3D Bookshelf View ── */
+const Bookshelf3D = ({ categories, tasksByLabel, onBookClick }) => {
+  const mountRef = useRef(null);
+  const sceneRef = useRef(null);
+  const rendererRef = useRef(null);
+  const cameraRef = useRef(null);
+  const controlsRef = useRef(null);
+  const animFrameRef = useRef(null);
+  const bookMeshesRef = useRef([]);
+  const raycasterRef = useRef(new THREE.Raycaster());
+  const mouseRef = useRef(new THREE.Vector2());
+  const hoveredRef = useRef(null);
+
+  /* Create a procedural wood texture */
+  const createWoodTexture = useCallback((baseColor, width, height) => {
+    const canvas = document.createElement('canvas');
+    canvas.width = width;
+    canvas.height = height;
+    const ctx = canvas.getContext('2d');
+
+    // Base color
+    ctx.fillStyle = baseColor;
+    ctx.fillRect(0, 0, width, height);
+
+    // Wood grain lines
+    for (let i = 0; i < height; i += 3) {
+      const variation = Math.sin(i * 0.05) * 8 + Math.random() * 4;
+      const alpha = 0.03 + Math.random() * 0.04;
+      ctx.strokeStyle = `rgba(0,0,0,${alpha})`;
+      ctx.lineWidth = 0.5 + Math.random();
+      ctx.beginPath();
+      ctx.moveTo(0, i);
+      for (let x = 0; x < width; x += 10) {
+        ctx.lineTo(x, i + Math.sin((x + variation) * 0.02) * 2);
+      }
+      ctx.stroke();
+    }
+
+    // Knots
+    const knotCount = Math.floor(Math.random() * 2) + 1;
+    for (let k = 0; k < knotCount; k++) {
+      const kx = Math.random() * width;
+      const ky = Math.random() * height;
+      const kr = 4 + Math.random() * 8;
+      const grad = ctx.createRadialGradient(kx, ky, 0, kx, ky, kr);
+      grad.addColorStop(0, 'rgba(60,30,15,0.3)');
+      grad.addColorStop(0.6, 'rgba(60,30,15,0.1)');
+      grad.addColorStop(1, 'transparent');
+      ctx.fillStyle = grad;
+      ctx.fillRect(kx - kr, ky - kr, kr * 2, kr * 2);
+    }
+
+    const texture = new THREE.CanvasTexture(canvas);
+    texture.wrapS = THREE.RepeatWrapping;
+    texture.wrapT = THREE.RepeatWrapping;
+    return texture;
+  }, []);
+
+  /* Create a book cover texture */
+  const createBookTexture = useCallback((color, title, width, height) => {
+    const canvas = document.createElement('canvas');
+    canvas.width = width;
+    canvas.height = height;
+    const ctx = canvas.getContext('2d');
+
+    // Base color
+    ctx.fillStyle = color;
+    ctx.fillRect(0, 0, width, height);
+
+    // Subtle fabric texture
+    for (let y = 0; y < height; y += 2) {
+      for (let x = 0; x < width; x += 2) {
+        if (Math.random() > 0.7) {
+          ctx.fillStyle = `rgba(0,0,0,${Math.random() * 0.08})`;
+          ctx.fillRect(x, y, 1, 1);
+        }
+      }
+    }
+
+    // Gold decorative lines
+    ctx.strokeStyle = 'rgba(218,165,32,0.6)';
+    ctx.lineWidth = 1.5;
+    ctx.beginPath();
+    ctx.moveTo(8, 20);
+    ctx.lineTo(width - 8, 20);
+    ctx.stroke();
+    ctx.beginPath();
+    ctx.moveTo(10, 24);
+    ctx.lineTo(width - 10, 24);
+    ctx.stroke();
+    ctx.beginPath();
+    ctx.moveTo(8, height - 30);
+    ctx.lineTo(width - 8, height - 30);
+    ctx.stroke();
+    ctx.beginPath();
+    ctx.moveTo(10, height - 26);
+    ctx.lineTo(width - 10, height - 26);
+    ctx.stroke();
+
+    // Title text (rotated for spine)
+    ctx.save();
+    ctx.translate(width / 2, height / 2);
+    ctx.fillStyle = 'rgba(255,255,255,0.9)';
+    ctx.font = `bold ${Math.min(12, width - 6)}px Inter, sans-serif`;
+    ctx.textAlign = 'center';
+    ctx.textBaseline = 'middle';
+    // Truncate title
+    let displayTitle = title;
+    while (ctx.measureText(displayTitle).width > height - 60 && displayTitle.length > 3) {
+      displayTitle = displayTitle.slice(0, -2) + '…';
+    }
+    ctx.rotate(-Math.PI / 2);
+    ctx.fillText(displayTitle, 0, 0);
+    ctx.restore();
+
+    return new THREE.CanvasTexture(canvas);
+  }, []);
+
+  /* Create ghost book texture */
+  const createGhostBookTexture = useCallback((width, height) => {
+    const canvas = document.createElement('canvas');
+    canvas.width = width;
+    canvas.height = height;
+    const ctx = canvas.getContext('2d');
+
+    ctx.fillStyle = 'rgba(255,255,255,0.03)';
+    ctx.fillRect(0, 0, width, height);
+
+    // Faint outline
+    ctx.strokeStyle = 'rgba(255,255,255,0.12)';
+    ctx.lineWidth = 1;
+    ctx.strokeRect(1, 1, width - 2, height - 2);
+
+    // Faint decorative lines
+    ctx.strokeStyle = 'rgba(255,255,255,0.06)';
+    ctx.beginPath();
+    ctx.moveTo(6, 16);
+    ctx.lineTo(width - 6, 16);
+    ctx.stroke();
+    ctx.beginPath();
+    ctx.moveTo(6, height - 20);
+    ctx.lineTo(width - 6, height - 20);
+    ctx.stroke();
+
+    return new THREE.CanvasTexture(canvas);
+  }, []);
+
+  useEffect(() => {
+    if (!mountRef.current) return;
+
+    const container = mountRef.current;
+    const width = container.clientWidth;
+    const height = container.clientHeight;
+
+    // Scene
+    const scene = new THREE.Scene();
+    scene.background = new THREE.Color(0xf5f0ff);
+    scene.fog = new THREE.Fog(0xf5f0ff, 18, 35);
+    sceneRef.current = scene;
+
+    // Camera — isometric-style perspective
+    const camera = new THREE.PerspectiveCamera(35, width / height, 0.1, 100);
+    camera.position.set(8, 6, 10);
+    camera.lookAt(0, 1, 0);
+    cameraRef.current = camera;
+
+    // Renderer
+    const renderer = new THREE.WebGLRenderer({ antialias: true, alpha: true });
+    renderer.setSize(width, height);
+    renderer.setPixelRatio(Math.min(window.devicePixelRatio, 2));
+    renderer.shadowMap.enabled = true;
+    renderer.shadowMap.type = THREE.PCFSoftShadowMap;
+    renderer.toneMapping = THREE.ACESFilmicToneMapping;
+    renderer.toneMappingExposure = 1.1;
+    rendererRef.current = renderer;
+    container.appendChild(renderer.domElement);
+
+    // Controls
+    const controls = new THREE.OrbitControls(camera, renderer.domElement);
+    controls.enableDamping = true;
+    controls.dampingFactor = 0.08;
+    controls.minDistance = 5;
+    controls.maxDistance = 22;
+    controls.maxPolarAngle = Math.PI / 2;
+    controls.target.set(0, 1.5, 0);
+    controls.update();
+    controlsRef.current = controls;
+
+    // Lighting
+    const ambientLight = new THREE.AmbientLight(0xfff5ee, 0.5);
+    scene.add(ambientLight);
+
+    const dirLight = new THREE.DirectionalLight(0xfff8f0, 1.2);
+    dirLight.position.set(5, 8, 6);
+    dirLight.castShadow = true;
+    dirLight.shadow.mapSize.width = 2048;
+    dirLight.shadow.mapSize.height = 2048;
+    dirLight.shadow.camera.near = 0.5;
+    dirLight.shadow.camera.far = 30;
+    dirLight.shadow.camera.left = -8;
+    dirLight.shadow.camera.right = 8;
+    dirLight.shadow.camera.top = 8;
+    dirLight.shadow.camera.bottom = -4;
+    dirLight.shadow.bias = -0.001;
+    scene.add(dirLight);
+
+    const fillLight = new THREE.DirectionalLight(0xe8d5f5, 0.3);
+    fillLight.position.set(-4, 4, -2);
+    scene.add(fillLight);
+
+    const rimLight = new THREE.PointLight(0xffeedd, 0.4, 20);
+    rimLight.position.set(-3, 5, 5);
+    scene.add(rimLight);
+
+    // Floor
+    const floorGeo = new THREE.PlaneGeometry(20, 20);
+    const floorMat = new THREE.MeshStandardMaterial({ color: 0xede5ff, roughness: 0.9 });
+    const floor = new THREE.Mesh(floorGeo, floorMat);
+    floor.rotation.x = -Math.PI / 2;
+    floor.receiveShadow = true;
+    scene.add(floor);
+
+    // Build bookshelf
+    const woodTex = createWoodTexture('#6B4423', 512, 512);
+    const woodTexDark = createWoodTexture('#4A2C2A', 512, 512);
+
+    const woodMat = new THREE.MeshStandardMaterial({
+      map: woodTex, roughness: 0.7, metalness: 0.05, color: 0x8B6544
+    });
+    const woodMatDark = new THREE.MeshStandardMaterial({
+      map: woodTexDark, roughness: 0.75, metalness: 0.03, color: 0x6B4423
+    });
+
+    const shelfGroup = new THREE.Group();
+
+    const catCount = categories.length;
+    const cols = Math.min(catCount, 2);
+    const shelves = Math.ceil(catCount / cols);
+
+    const shelfW = 4.5;
+    const shelfH = 2.2;
+    const shelfD = 1.2;
+    const sideThick = 0.12;
+    const shelfThick = 0.1;
+    const totalW = cols * shelfW + (cols - 1) * 0.3;
+    const totalH = shelves * shelfH;
+
+    // Build shelf structure per category
+    categories.forEach((cat, catIdx) => {
+      const col = catIdx % cols;
+      const row = Math.floor(catIdx / cols);
+      const offsetX = (col - (cols - 1) / 2) * (shelfW + 0.3);
+      const offsetY = (shelves - 1 - row) * shelfH;
+
+      // Back panel
+      const backGeo = new THREE.BoxGeometry(shelfW, shelfH, 0.06);
+      const backMesh = new THREE.Mesh(backGeo, woodMatDark);
+      backMesh.position.set(offsetX, offsetY + shelfH / 2, -shelfD / 2);
+      backMesh.castShadow = true;
+      backMesh.receiveShadow = true;
+      shelfGroup.add(backMesh);
+
+      // Bottom shelf
+      const bottomGeo = new THREE.BoxGeometry(shelfW + sideThick * 2, shelfThick, shelfD + 0.1);
+      const bottomMesh = new THREE.Mesh(bottomGeo, woodMat);
+      bottomMesh.position.set(offsetX, offsetY, 0);
+      bottomMesh.castShadow = true;
+      bottomMesh.receiveShadow = true;
+      shelfGroup.add(bottomMesh);
+
+      // Top shelf
+      const topMesh = new THREE.Mesh(bottomGeo, woodMat);
+      topMesh.position.set(offsetX, offsetY + shelfH, 0);
+      topMesh.castShadow = true;
+      topMesh.receiveShadow = true;
+      shelfGroup.add(topMesh);
+
+      // Left side
+      const sideGeo = new THREE.BoxGeometry(sideThick, shelfH, shelfD);
+      const leftMesh = new THREE.Mesh(sideGeo, woodMat);
+      leftMesh.position.set(offsetX - shelfW / 2 - sideThick / 2, offsetY + shelfH / 2, 0);
+      leftMesh.castShadow = true;
+      leftMesh.receiveShadow = true;
+      shelfGroup.add(leftMesh);
+
+      // Right side
+      const rightMesh = new THREE.Mesh(sideGeo, woodMat);
+      rightMesh.position.set(offsetX + shelfW / 2 + sideThick / 2, offsetY + shelfH / 2, 0);
+      rightMesh.castShadow = true;
+      rightMesh.receiveShadow = true;
+      shelfGroup.add(rightMesh);
+
+      // Category label on shelf edge
+      const labelCanvas = document.createElement('canvas');
+      labelCanvas.width = 256;
+      labelCanvas.height = 32;
+      const lctx = labelCanvas.getContext('2d');
+      lctx.fillStyle = 'rgba(232,213,183,0.8)';
+      lctx.font = 'bold 18px Inter, sans-serif';
+      lctx.textAlign = 'left';
+      lctx.textBaseline = 'middle';
+      lctx.fillText(cat.name, 8, 16);
+      const labelTex = new THREE.CanvasTexture(labelCanvas);
+      const labelGeo = new THREE.PlaneGeometry(1.5, 0.18);
+      const labelMat = new THREE.MeshBasicMaterial({ map: labelTex, transparent: true });
+      const labelMesh = new THREE.Mesh(labelGeo, labelMat);
+      labelMesh.position.set(offsetX - shelfW / 2 + 1, offsetY + shelfH - 0.04, shelfD / 2 + 0.06);
+      shelfGroup.add(labelMesh);
+
+      // Add real books
+      const tasks = tasksByLabel[cat.name] || [];
+      let bookX = offsetX - shelfW / 2 + 0.25;
+      const bookBaseY = offsetY + shelfThick / 2;
+
+      tasks.forEach((task) => {
+        const tw = TIMEFRAME_WIDTHS[task.timeframe] || TIMEFRAME_WIDTHS['medium'];
+        const bookWidth = tw * 0.012;
+        const bookHeight = 1.4 + Math.random() * 0.5;
+        const bookDepth = 0.85 + Math.random() * 0.2;
+
+        const bookGeo = new THREE.BoxGeometry(bookWidth, bookHeight, bookDepth);
+        const spineTex = createBookTexture(cat.accent, task.name, 128, 512);
+
+        const bookMaterials = [
+          new THREE.MeshStandardMaterial({ color: cat.accent, roughness: 0.6 }), // right
+          new THREE.MeshStandardMaterial({ color: cat.accent, roughness: 0.6 }), // left
+          new THREE.MeshStandardMaterial({ color: 0xfffff0, roughness: 0.9 }),   // top (pages)
+          new THREE.MeshStandardMaterial({ color: cat.accent, roughness: 0.6 }), // bottom
+          new THREE.MeshStandardMaterial({ map: spineTex, roughness: 0.5 }),      // front (spine)
+          new THREE.MeshStandardMaterial({ color: cat.accent, roughness: 0.6 })  // back
+        ];
+
+        const bookMesh = new THREE.Mesh(bookGeo, bookMaterials);
+        const tilt = (Math.random() - 0.5) * 0.06;
+        bookMesh.position.set(bookX + bookWidth / 2, bookBaseY + bookHeight / 2, 0);
+        bookMesh.rotation.z = tilt;
+        bookMesh.castShadow = true;
+        bookMesh.receiveShadow = true;
+        bookMesh.userData = { task, type: 'book' };
+        shelfGroup.add(bookMesh);
+        bookMeshesRef.current.push(bookMesh);
+
+        bookX += bookWidth + 0.04;
+      });
+
+      // Ghost placeholder books to fill remaining space
+      const ghostCount = Math.max(2, 5 - tasks.length);
+      const ghostPresets = [
+        { w: 0.45, h: 1.5 }, { w: 0.6, h: 1.8 }, { w: 0.5, h: 1.3 },
+        { w: 0.7, h: 1.9 }, { w: 0.4, h: 1.1 }, { w: 0.55, h: 1.6 }
+      ];
+
+      for (let g = 0; g < ghostCount; g++) {
+        const preset = ghostPresets[g % ghostPresets.length];
+        if (bookX + preset.w > offsetX + shelfW / 2 - 0.15) break;
+
+        const ghostGeo = new THREE.BoxGeometry(preset.w * 0.55, preset.h, 0.8);
+        const ghostTex = createGhostBookTexture(64, 256);
+        const ghostMat = new THREE.MeshStandardMaterial({
+          map: ghostTex,
+          transparent: true,
+          opacity: 0.15,
+          roughness: 0.9,
+          color: 0xffffff
+        });
+        const ghostMesh = new THREE.Mesh(ghostGeo, ghostMat);
+        ghostMesh.position.set(bookX + preset.w * 0.275, bookBaseY + preset.h / 2, 0);
+        ghostMesh.rotation.z = (Math.random() - 0.5) * 0.04;
+        shelfGroup.add(ghostMesh);
+        bookX += preset.w * 0.55 + 0.04;
+      }
+    });
+
+    // Center the shelf
+    shelfGroup.position.set(0, 0.05, 0);
+    scene.add(shelfGroup);
+
+    // Mouse interaction
+    const handleMouseMove = (e) => {
+      const rect = renderer.domElement.getBoundingClientRect();
+      mouseRef.current.x = ((e.clientX - rect.left) / rect.width) * 2 - 1;
+      mouseRef.current.y = -((e.clientY - rect.top) / rect.height) * 2 + 1;
+    };
+
+    const handleClick = (e) => {
+      raycasterRef.current.setFromCamera(mouseRef.current, camera);
+      const intersects = raycasterRef.current.intersectObjects(bookMeshesRef.current);
+      if (intersects.length > 0) {
+        const hit = intersects[0].object;
+        if (hit.userData.task && onBookClick) {
+          onBookClick(hit.userData.task);
+        }
+      }
+    };
+
+    renderer.domElement.addEventListener('mousemove', handleMouseMove);
+    renderer.domElement.addEventListener('click', handleClick);
+
+    // Animation loop
+    const animate = () => {
+      animFrameRef.current = requestAnimationFrame(animate);
+      controls.update();
+
+      // Hover detection
+      raycasterRef.current.setFromCamera(mouseRef.current, camera);
+      const intersects = raycasterRef.current.intersectObjects(bookMeshesRef.current);
+
+      if (hoveredRef.current && hoveredRef.current !== (intersects[0]?.object || null)) {
+        // Reset previous hovered
+        hoveredRef.current.position.y -= 0.15;
+        hoveredRef.current.scale.set(1, 1, 1);
+        renderer.domElement.style.cursor = 'default';
+        hoveredRef.current = null;
+      }
+
+      if (intersects.length > 0 && intersects[0].object !== hoveredRef.current) {
+        hoveredRef.current = intersects[0].object;
+        hoveredRef.current.position.y += 0.15;
+        hoveredRef.current.scale.set(1.05, 1.05, 1.05);
+        renderer.domElement.style.cursor = 'pointer';
+      }
+
+      renderer.render(scene, camera);
+    };
+    animate();
+
+    // Resize handler
+    const handleResize = () => {
+      const w = container.clientWidth;
+      const h = container.clientHeight;
+      camera.aspect = w / h;
+      camera.updateProjectionMatrix();
+      renderer.setSize(w, h);
+    };
+    window.addEventListener('resize', handleResize);
+
+    return () => {
+      cancelAnimationFrame(animFrameRef.current);
+      renderer.domElement.removeEventListener('mousemove', handleMouseMove);
+      renderer.domElement.removeEventListener('click', handleClick);
+      window.removeEventListener('resize', handleResize);
+      controls.dispose();
+      renderer.dispose();
+      bookMeshesRef.current = [];
+      hoveredRef.current = null;
+      if (container.contains(renderer.domElement)) {
+        container.removeChild(renderer.domElement);
+      }
+    };
+  }, [categories, tasksByLabel, onBookClick, createWoodTexture, createBookTexture, createGhostBookTexture]);
+
+  return (
+    <div
+      ref={mountRef}
+      className="w-full h-full rounded-xl overflow-hidden"
+      style={{ touchAction: 'none' }}
+    />
   );
 };
 
@@ -440,6 +923,7 @@ const App = () => {
   const [showCategoryManager, setShowCategoryManager] = useState(false);
   const [selectedTask, setSelectedTask] = useState(null);
   const [flickeringId, setFlickeringId] = useState(null);
+  const [view3D, setView3D] = useState(false);
 
   const activeTasks = tasks.filter(t => !t.completed);
   const archivedTasks = tasks.filter(t => t.completed);
@@ -497,6 +981,9 @@ const App = () => {
             Artisan Todo
           </h1>
           <div className="flex items-center gap-2">
+            <button onClick={() => setView3D(v => !v)} className={`w-8 h-8 rounded-full flex items-center justify-center shadow-sm transition-colors ${view3D ? 'bg-artisan-purple text-white' : 'bg-white/90 text-gray-500 hover:text-artisan-purple'}`} title={view3D ? 'Switch to 2D' : 'Switch to 3D'}>
+              {view3D ? <Icons.Grid2D /> : <Icons.Cube3D />}
+            </button>
             <button onClick={() => setShowCategoryManager(true)} className="w-8 h-8 rounded-full bg-white/90 text-gray-500 hover:text-artisan-purple flex items-center justify-center shadow-sm transition-colors" title="Manage Shelves">
               <Icons.Settings />
             </button>
@@ -512,15 +999,21 @@ const App = () => {
       <main className="relative z-10 flex-1 px-4 pb-2 overflow-hidden">
         <AnimatePresence mode="wait">
           {activeView === 'library' ? (
-            <motion.div key="library" className={needsScroll ? 'h-full overflow-y-auto custom-scrollbar' : 'h-full'} initial={{ opacity: 0 }} animate={{ opacity: 1 }} exit={{ opacity: 0 }}>
-              <div style={gridStyle}>
-                {categories.map((cat) => (
-                  <div key={cat.name} className="shelf-quadrant rounded-xl p-2 overflow-hidden" style={needsScroll ? { minHeight: '200px' } : {}}>
-                    <ShelfQuadrant label={cat.name} tasks={tasksByLabel[cat.name] || []} onBookClick={setSelectedTask} onComplete={handleComplete} flickeringId={flickeringId} shelfColors={cat} />
-                  </div>
-                ))}
-              </div>
-            </motion.div>
+            view3D ? (
+              <motion.div key="library-3d" className="h-full" initial={{ opacity: 0 }} animate={{ opacity: 1 }} exit={{ opacity: 0 }}>
+                <Bookshelf3D categories={categories} tasksByLabel={tasksByLabel} onBookClick={setSelectedTask} />
+              </motion.div>
+            ) : (
+              <motion.div key="library" className={needsScroll ? 'h-full overflow-y-auto custom-scrollbar' : 'h-full'} initial={{ opacity: 0 }} animate={{ opacity: 1 }} exit={{ opacity: 0 }}>
+                <div style={gridStyle}>
+                  {categories.map((cat) => (
+                    <div key={cat.name} className="shelf-quadrant rounded-xl p-2 overflow-hidden" style={needsScroll ? { minHeight: '200px' } : {}}>
+                      <ShelfQuadrant label={cat.name} tasks={tasksByLabel[cat.name] || []} onBookClick={setSelectedTask} onComplete={handleComplete} flickeringId={flickeringId} shelfColors={cat} />
+                    </div>
+                  ))}
+                </div>
+              </motion.div>
+            )
           ) : (
             <motion.div key="archive" className="h-full bg-white/50 rounded-xl overflow-hidden border border-white/60" initial={{ opacity: 0 }} animate={{ opacity: 1 }} exit={{ opacity: 0 }}>
               <ArchiveView tasks={archivedTasks} onRestore={handleRestore} onDelete={handleDelete} categories={categories} />
