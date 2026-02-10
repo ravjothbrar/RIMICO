@@ -22,12 +22,16 @@ const useLocalStorage = (key, initialValue) => {
 };
 
 /* ── Constants ── */
-const DEFAULT_CATEGORIES = [
+const SUGGESTED_CATEGORIES = [
+  { name: 'Work',     accent: '#2563EB' },
+  { name: 'Health',   accent: '#059669' },
   { name: 'Personal', accent: '#8B5CF6' },
-  { name: 'School',   accent: '#1E40AF' },
-  { name: 'Beri',     accent: '#047857' },
-  { name: 'AI',       accent: '#0891B2' }
+  { name: 'Hobbies',  accent: '#D97706' }
 ];
+
+const PRESET_COLORS = ['#8B5CF6', '#2563EB', '#059669', '#D97706', '#DC2626', '#0891B2', '#7C3AED', '#BE185D'];
+
+const DEFAULT_CATEGORIES = SUGGESTED_CATEGORIES;
 
 const TIMEFRAME_WIDTHS = { quick: 45, short: 60, medium: 75, long: 95, extended: 115 };
 
@@ -248,461 +252,310 @@ const ShelfQuadrant = ({ label, tasks, onBookClick, onComplete, flickeringId, sh
 /* ── 3D Bookshelf View ── */
 const Bookshelf3D = ({ categories, tasksByLabel, onBookClick }) => {
   const mountRef = useRef(null);
-  const sceneRef = useRef(null);
-  const rendererRef = useRef(null);
-  const cameraRef = useRef(null);
-  const controlsRef = useRef(null);
   const animFrameRef = useRef(null);
-  const bookMeshesRef = useRef([]);
-  const raycasterRef = useRef(new THREE.Raycaster());
-  const mouseRef = useRef(new THREE.Vector2());
-  const hoveredRef = useRef(null);
+  const cleanupRef = useRef(null);
 
-  /* Create a procedural wood texture */
-  const createWoodTexture = useCallback((baseColor, width, height) => {
-    const canvas = document.createElement('canvas');
-    canvas.width = width;
-    canvas.height = height;
-    const ctx = canvas.getContext('2d');
-
-    // Base color
+  /* Procedural wood texture */
+  const createWoodTexture = useCallback((baseColor, w, h) => {
+    const c = document.createElement('canvas');
+    c.width = w; c.height = h;
+    const ctx = c.getContext('2d');
     ctx.fillStyle = baseColor;
-    ctx.fillRect(0, 0, width, height);
-
-    // Wood grain lines
-    for (let i = 0; i < height; i += 3) {
-      const variation = Math.sin(i * 0.05) * 8 + Math.random() * 4;
-      const alpha = 0.03 + Math.random() * 0.04;
-      ctx.strokeStyle = `rgba(0,0,0,${alpha})`;
+    ctx.fillRect(0, 0, w, h);
+    for (let i = 0; i < h; i += 3) {
+      const v = Math.sin(i * 0.05) * 8 + Math.random() * 4;
+      ctx.strokeStyle = `rgba(0,0,0,${0.03 + Math.random() * 0.04})`;
       ctx.lineWidth = 0.5 + Math.random();
-      ctx.beginPath();
-      ctx.moveTo(0, i);
-      for (let x = 0; x < width; x += 10) {
-        ctx.lineTo(x, i + Math.sin((x + variation) * 0.02) * 2);
-      }
+      ctx.beginPath(); ctx.moveTo(0, i);
+      for (let x = 0; x < w; x += 10) ctx.lineTo(x, i + Math.sin((x + v) * 0.02) * 2);
       ctx.stroke();
     }
-
-    // Knots
-    const knotCount = Math.floor(Math.random() * 2) + 1;
-    for (let k = 0; k < knotCount; k++) {
-      const kx = Math.random() * width;
-      const ky = Math.random() * height;
-      const kr = 4 + Math.random() * 8;
-      const grad = ctx.createRadialGradient(kx, ky, 0, kx, ky, kr);
-      grad.addColorStop(0, 'rgba(60,30,15,0.3)');
-      grad.addColorStop(0.6, 'rgba(60,30,15,0.1)');
-      grad.addColorStop(1, 'transparent');
-      ctx.fillStyle = grad;
-      ctx.fillRect(kx - kr, ky - kr, kr * 2, kr * 2);
+    for (let k = 0; k < 1 + Math.floor(Math.random() * 2); k++) {
+      const kx = Math.random() * w, ky = Math.random() * h, kr = 4 + Math.random() * 8;
+      const g = ctx.createRadialGradient(kx, ky, 0, kx, ky, kr);
+      g.addColorStop(0, 'rgba(60,30,15,0.3)'); g.addColorStop(1, 'transparent');
+      ctx.fillStyle = g; ctx.fillRect(kx - kr, ky - kr, kr * 2, kr * 2);
     }
-
-    const texture = new THREE.CanvasTexture(canvas);
-    texture.wrapS = THREE.RepeatWrapping;
-    texture.wrapT = THREE.RepeatWrapping;
-    return texture;
+    const tex = new THREE.CanvasTexture(c);
+    tex.wrapS = tex.wrapT = THREE.RepeatWrapping;
+    return tex;
   }, []);
 
-  /* Create a book cover texture */
-  const createBookTexture = useCallback((color, title, width, height) => {
-    const canvas = document.createElement('canvas');
-    canvas.width = width;
-    canvas.height = height;
-    const ctx = canvas.getContext('2d');
-
-    // Base color
-    ctx.fillStyle = color;
-    ctx.fillRect(0, 0, width, height);
-
-    // Subtle fabric texture
-    for (let y = 0; y < height; y += 2) {
-      for (let x = 0; x < width; x += 2) {
-        if (Math.random() > 0.7) {
-          ctx.fillStyle = `rgba(0,0,0,${Math.random() * 0.08})`;
-          ctx.fillRect(x, y, 1, 1);
-        }
-      }
-    }
-
-    // Gold decorative lines
-    ctx.strokeStyle = 'rgba(218,165,32,0.6)';
-    ctx.lineWidth = 1.5;
-    ctx.beginPath();
-    ctx.moveTo(8, 20);
-    ctx.lineTo(width - 8, 20);
-    ctx.stroke();
-    ctx.beginPath();
-    ctx.moveTo(10, 24);
-    ctx.lineTo(width - 10, 24);
-    ctx.stroke();
-    ctx.beginPath();
-    ctx.moveTo(8, height - 30);
-    ctx.lineTo(width - 8, height - 30);
-    ctx.stroke();
-    ctx.beginPath();
-    ctx.moveTo(10, height - 26);
-    ctx.lineTo(width - 10, height - 26);
-    ctx.stroke();
-
-    // Title text (rotated for spine)
-    ctx.save();
-    ctx.translate(width / 2, height / 2);
+  /* Book spine texture */
+  const createBookTexture = useCallback((color, title, w, h) => {
+    const c = document.createElement('canvas');
+    c.width = w; c.height = h;
+    const ctx = c.getContext('2d');
+    ctx.fillStyle = color; ctx.fillRect(0, 0, w, h);
+    for (let y = 0; y < h; y += 2) for (let x = 0; x < w; x += 2)
+      if (Math.random() > 0.7) { ctx.fillStyle = `rgba(0,0,0,${Math.random() * 0.08})`; ctx.fillRect(x, y, 1, 1); }
+    ctx.strokeStyle = 'rgba(218,165,32,0.6)'; ctx.lineWidth = 1.5;
+    [[8, 20, w - 8], [10, 24, w - 10], [8, h - 30, w - 8], [10, h - 26, w - 10]].forEach(([x1, y1, x2]) => {
+      ctx.beginPath(); ctx.moveTo(x1, y1); ctx.lineTo(x2, y1); ctx.stroke();
+    });
+    ctx.save(); ctx.translate(w / 2, h / 2);
     ctx.fillStyle = 'rgba(255,255,255,0.9)';
-    ctx.font = `bold ${Math.min(12, width - 6)}px Inter, sans-serif`;
-    ctx.textAlign = 'center';
-    ctx.textBaseline = 'middle';
-    // Truncate title
-    let displayTitle = title;
-    while (ctx.measureText(displayTitle).width > height - 60 && displayTitle.length > 3) {
-      displayTitle = displayTitle.slice(0, -2) + '…';
-    }
-    ctx.rotate(-Math.PI / 2);
-    ctx.fillText(displayTitle, 0, 0);
-    ctx.restore();
-
-    return new THREE.CanvasTexture(canvas);
+    ctx.font = `bold ${Math.min(12, w - 6)}px Inter, sans-serif`;
+    ctx.textAlign = 'center'; ctx.textBaseline = 'middle';
+    let dt = title;
+    while (ctx.measureText(dt).width > h - 60 && dt.length > 3) dt = dt.slice(0, -2) + '\u2026';
+    ctx.rotate(-Math.PI / 2); ctx.fillText(dt, 0, 0); ctx.restore();
+    return new THREE.CanvasTexture(c);
   }, []);
 
-  /* Create ghost book texture */
-  const createGhostBookTexture = useCallback((width, height) => {
-    const canvas = document.createElement('canvas');
-    canvas.width = width;
-    canvas.height = height;
-    const ctx = canvas.getContext('2d');
-
-    ctx.fillStyle = 'rgba(255,255,255,0.03)';
-    ctx.fillRect(0, 0, width, height);
-
-    // Faint outline
-    ctx.strokeStyle = 'rgba(255,255,255,0.12)';
-    ctx.lineWidth = 1;
-    ctx.strokeRect(1, 1, width - 2, height - 2);
-
-    // Faint decorative lines
+  /* Ghost book texture */
+  const createGhostBookTexture = useCallback((w, h) => {
+    const c = document.createElement('canvas');
+    c.width = w; c.height = h;
+    const ctx = c.getContext('2d');
+    ctx.fillStyle = 'rgba(255,255,255,0.03)'; ctx.fillRect(0, 0, w, h);
+    ctx.strokeStyle = 'rgba(255,255,255,0.12)'; ctx.lineWidth = 1;
+    ctx.strokeRect(1, 1, w - 2, h - 2);
     ctx.strokeStyle = 'rgba(255,255,255,0.06)';
-    ctx.beginPath();
-    ctx.moveTo(6, 16);
-    ctx.lineTo(width - 6, 16);
-    ctx.stroke();
-    ctx.beginPath();
-    ctx.moveTo(6, height - 20);
-    ctx.lineTo(width - 6, height - 20);
-    ctx.stroke();
-
-    return new THREE.CanvasTexture(canvas);
+    ctx.beginPath(); ctx.moveTo(6, 16); ctx.lineTo(w - 6, 16); ctx.stroke();
+    ctx.beginPath(); ctx.moveTo(6, h - 20); ctx.lineTo(w - 6, h - 20); ctx.stroke();
+    return new THREE.CanvasTexture(c);
   }, []);
 
   useEffect(() => {
-    if (!mountRef.current) return;
-
     const container = mountRef.current;
-    const width = container.clientWidth;
-    const height = container.clientHeight;
+    if (!container) return;
 
-    // Scene
-    const scene = new THREE.Scene();
-    scene.background = new THREE.Color(0xf5f0ff);
-    scene.fog = new THREE.Fog(0xf5f0ff, 18, 35);
-    sceneRef.current = scene;
+    /* Wait one frame so the container has layout dimensions */
+    const initFrame = requestAnimationFrame(() => {
+      const w = container.clientWidth || 800;
+      const h = container.clientHeight || 500;
+      if (w < 10 || h < 10) return;
 
-    // Camera — isometric-style perspective
-    const camera = new THREE.PerspectiveCamera(35, width / height, 0.1, 100);
-    camera.position.set(8, 6, 10);
-    camera.lookAt(0, 1, 0);
-    cameraRef.current = camera;
+      // Scene
+      const scene = new THREE.Scene();
+      scene.background = new THREE.Color(0xf5f0ff);
+      scene.fog = new THREE.Fog(0xf5f0ff, 18, 35);
 
-    // Renderer
-    const renderer = new THREE.WebGLRenderer({ antialias: true, alpha: true });
-    renderer.setSize(width, height);
-    renderer.setPixelRatio(Math.min(window.devicePixelRatio, 2));
-    renderer.shadowMap.enabled = true;
-    renderer.shadowMap.type = THREE.PCFSoftShadowMap;
-    renderer.toneMapping = THREE.ACESFilmicToneMapping;
-    renderer.toneMappingExposure = 1.1;
-    rendererRef.current = renderer;
-    container.appendChild(renderer.domElement);
+      // Camera
+      const camera = new THREE.PerspectiveCamera(35, w / h, 0.1, 100);
+      const target = new THREE.Vector3(0, 1.5, 0);
 
-    // Controls
-    const controls = new THREE.OrbitControls(camera, renderer.domElement);
-    controls.enableDamping = true;
-    controls.dampingFactor = 0.08;
-    controls.minDistance = 5;
-    controls.maxDistance = 22;
-    controls.maxPolarAngle = Math.PI / 2;
-    controls.target.set(0, 1.5, 0);
-    controls.update();
-    controlsRef.current = controls;
+      // Orbit state
+      let theta = 0.65, phi = 1.05, radius = 14;
+      const updateCameraPos = () => {
+        camera.position.set(
+          target.x + radius * Math.sin(phi) * Math.sin(theta),
+          target.y + radius * Math.cos(phi),
+          target.z + radius * Math.sin(phi) * Math.cos(theta)
+        );
+        camera.lookAt(target);
+      };
+      updateCameraPos();
 
-    // Lighting
-    const ambientLight = new THREE.AmbientLight(0xfff5ee, 0.5);
-    scene.add(ambientLight);
+      // Renderer
+      const renderer = new THREE.WebGLRenderer({ antialias: true });
+      renderer.setSize(w, h);
+      renderer.setPixelRatio(Math.min(window.devicePixelRatio, 2));
+      renderer.shadowMap.enabled = true;
+      renderer.shadowMap.type = THREE.PCFSoftShadowMap;
+      renderer.toneMapping = THREE.ACESFilmicToneMapping;
+      renderer.toneMappingExposure = 1.1;
+      container.appendChild(renderer.domElement);
 
-    const dirLight = new THREE.DirectionalLight(0xfff8f0, 1.2);
-    dirLight.position.set(5, 8, 6);
-    dirLight.castShadow = true;
-    dirLight.shadow.mapSize.width = 2048;
-    dirLight.shadow.mapSize.height = 2048;
-    dirLight.shadow.camera.near = 0.5;
-    dirLight.shadow.camera.far = 30;
-    dirLight.shadow.camera.left = -8;
-    dirLight.shadow.camera.right = 8;
-    dirLight.shadow.camera.top = 8;
-    dirLight.shadow.camera.bottom = -4;
-    dirLight.shadow.bias = -0.001;
-    scene.add(dirLight);
+      /* ── Inline orbit controls via mouse events ── */
+      let isDragging = false, prevX = 0, prevY = 0;
+      const onPointerDown = (e) => { isDragging = true; prevX = e.clientX; prevY = e.clientY; };
+      const onPointerUp = () => { isDragging = false; };
+      const onPointerMove = (e) => {
+        if (!isDragging) return;
+        const dx = e.clientX - prevX, dy = e.clientY - prevY;
+        theta -= dx * 0.005;
+        phi = Math.max(0.3, Math.min(Math.PI / 2 - 0.05, phi - dy * 0.005));
+        prevX = e.clientX; prevY = e.clientY;
+        updateCameraPos();
+      };
+      const onWheel = (e) => {
+        e.preventDefault();
+        radius = Math.max(5, Math.min(22, radius + e.deltaY * 0.01));
+        updateCameraPos();
+      };
+      renderer.domElement.addEventListener('pointerdown', onPointerDown);
+      window.addEventListener('pointerup', onPointerUp);
+      window.addEventListener('pointermove', onPointerMove);
+      renderer.domElement.addEventListener('wheel', onWheel, { passive: false });
 
-    const fillLight = new THREE.DirectionalLight(0xe8d5f5, 0.3);
-    fillLight.position.set(-4, 4, -2);
-    scene.add(fillLight);
+      // Lighting
+      scene.add(new THREE.AmbientLight(0xfff5ee, 0.5));
+      const dirLight = new THREE.DirectionalLight(0xfff8f0, 1.2);
+      dirLight.position.set(5, 8, 6); dirLight.castShadow = true;
+      dirLight.shadow.mapSize.width = dirLight.shadow.mapSize.height = 2048;
+      dirLight.shadow.camera.near = 0.5; dirLight.shadow.camera.far = 30;
+      dirLight.shadow.camera.left = -8; dirLight.shadow.camera.right = 8;
+      dirLight.shadow.camera.top = 8; dirLight.shadow.camera.bottom = -4;
+      dirLight.shadow.bias = -0.001;
+      scene.add(dirLight);
+      const fill = new THREE.DirectionalLight(0xe8d5f5, 0.3); fill.position.set(-4, 4, -2); scene.add(fill);
+      const rim = new THREE.PointLight(0xffeedd, 0.4, 20); rim.position.set(-3, 5, 5); scene.add(rim);
 
-    const rimLight = new THREE.PointLight(0xffeedd, 0.4, 20);
-    rimLight.position.set(-3, 5, 5);
-    scene.add(rimLight);
+      // Floor
+      const floor = new THREE.Mesh(new THREE.PlaneGeometry(20, 20), new THREE.MeshStandardMaterial({ color: 0xede5ff, roughness: 0.9 }));
+      floor.rotation.x = -Math.PI / 2; floor.receiveShadow = true; scene.add(floor);
 
-    // Floor
-    const floorGeo = new THREE.PlaneGeometry(20, 20);
-    const floorMat = new THREE.MeshStandardMaterial({ color: 0xede5ff, roughness: 0.9 });
-    const floor = new THREE.Mesh(floorGeo, floorMat);
-    floor.rotation.x = -Math.PI / 2;
-    floor.receiveShadow = true;
-    scene.add(floor);
+      // Build bookshelf
+      const woodMat = new THREE.MeshStandardMaterial({ map: createWoodTexture('#6B4423', 512, 512), roughness: 0.7, metalness: 0.05, color: 0x8B6544 });
+      const woodMatDark = new THREE.MeshStandardMaterial({ map: createWoodTexture('#4A2C2A', 512, 512), roughness: 0.75, metalness: 0.03, color: 0x6B4423 });
+      const shelfGroup = new THREE.Group();
+      const bookMeshes = [];
+      const cols = Math.min(categories.length, 2);
+      const shelves = Math.ceil(categories.length / cols);
+      const shelfW = 4.5, shelfH = 2.2, shelfD = 1.2, sideThick = 0.12, shelfThick = 0.1;
 
-    // Build bookshelf
-    const woodTex = createWoodTexture('#6B4423', 512, 512);
-    const woodTexDark = createWoodTexture('#4A2C2A', 512, 512);
+      categories.forEach((cat, catIdx) => {
+        const col = catIdx % cols, row = Math.floor(catIdx / cols);
+        const ox = (col - (cols - 1) / 2) * (shelfW + 0.3);
+        const oy = (shelves - 1 - row) * shelfH;
 
-    const woodMat = new THREE.MeshStandardMaterial({
-      map: woodTex, roughness: 0.7, metalness: 0.05, color: 0x8B6544
-    });
-    const woodMatDark = new THREE.MeshStandardMaterial({
-      map: woodTexDark, roughness: 0.75, metalness: 0.03, color: 0x6B4423
-    });
+        // Back panel
+        const back = new THREE.Mesh(new THREE.BoxGeometry(shelfW, shelfH, 0.06), woodMatDark);
+        back.position.set(ox, oy + shelfH / 2, -shelfD / 2); back.castShadow = back.receiveShadow = true;
+        shelfGroup.add(back);
 
-    const shelfGroup = new THREE.Group();
+        // Bottom + top
+        const plankGeo = new THREE.BoxGeometry(shelfW + sideThick * 2, shelfThick, shelfD + 0.1);
+        const bot = new THREE.Mesh(plankGeo, woodMat); bot.position.set(ox, oy, 0); bot.castShadow = bot.receiveShadow = true; shelfGroup.add(bot);
+        const top = new THREE.Mesh(plankGeo, woodMat); top.position.set(ox, oy + shelfH, 0); top.castShadow = top.receiveShadow = true; shelfGroup.add(top);
 
-    const catCount = categories.length;
-    const cols = Math.min(catCount, 2);
-    const shelves = Math.ceil(catCount / cols);
+        // Sides
+        const sideGeo = new THREE.BoxGeometry(sideThick, shelfH, shelfD);
+        const left = new THREE.Mesh(sideGeo, woodMat); left.position.set(ox - shelfW / 2 - sideThick / 2, oy + shelfH / 2, 0); left.castShadow = left.receiveShadow = true; shelfGroup.add(left);
+        const right = new THREE.Mesh(sideGeo, woodMat); right.position.set(ox + shelfW / 2 + sideThick / 2, oy + shelfH / 2, 0); right.castShadow = right.receiveShadow = true; shelfGroup.add(right);
 
-    const shelfW = 4.5;
-    const shelfH = 2.2;
-    const shelfD = 1.2;
-    const sideThick = 0.12;
-    const shelfThick = 0.1;
-    const totalW = cols * shelfW + (cols - 1) * 0.3;
-    const totalH = shelves * shelfH;
+        // Category label
+        const lc = document.createElement('canvas'); lc.width = 256; lc.height = 32;
+        const lx = lc.getContext('2d'); lx.fillStyle = 'rgba(232,213,183,0.8)';
+        lx.font = 'bold 18px Inter, sans-serif'; lx.textAlign = 'left'; lx.textBaseline = 'middle';
+        lx.fillText(cat.name, 8, 16);
+        const lbl = new THREE.Mesh(new THREE.PlaneGeometry(1.5, 0.18), new THREE.MeshBasicMaterial({ map: new THREE.CanvasTexture(lc), transparent: true }));
+        lbl.position.set(ox - shelfW / 2 + 1, oy + shelfH - 0.04, shelfD / 2 + 0.06);
+        shelfGroup.add(lbl);
 
-    // Build shelf structure per category
-    categories.forEach((cat, catIdx) => {
-      const col = catIdx % cols;
-      const row = Math.floor(catIdx / cols);
-      const offsetX = (col - (cols - 1) / 2) * (shelfW + 0.3);
-      const offsetY = (shelves - 1 - row) * shelfH;
+        // Seed RNG per-shelf so heights are stable across re-renders
+        const seed = cat.name.split('').reduce((a, c) => a + c.charCodeAt(0), 0);
+        const seededRand = (i) => { const x = Math.sin(seed + i * 9301 + 49297) * 233280; return x - Math.floor(x); };
 
-      // Back panel
-      const backGeo = new THREE.BoxGeometry(shelfW, shelfH, 0.06);
-      const backMesh = new THREE.Mesh(backGeo, woodMatDark);
-      backMesh.position.set(offsetX, offsetY + shelfH / 2, -shelfD / 2);
-      backMesh.castShadow = true;
-      backMesh.receiveShadow = true;
-      shelfGroup.add(backMesh);
+        // Real books
+        const tasks = tasksByLabel[cat.name] || [];
+        let bx = ox - shelfW / 2 + 0.25;
+        const by = oy + shelfThick / 2;
+        tasks.forEach((task, ti) => {
+          const tw = TIMEFRAME_WIDTHS[task.timeframe] || TIMEFRAME_WIDTHS['medium'];
+          const bw = tw * 0.012, bh = 1.4 + seededRand(ti) * 0.5, bd = 0.85 + seededRand(ti + 50) * 0.2;
+          const geo = new THREE.BoxGeometry(bw, bh, bd);
+          const spine = createBookTexture(cat.accent, task.name, 128, 512);
+          const mats = [
+            new THREE.MeshStandardMaterial({ color: cat.accent, roughness: 0.6 }),
+            new THREE.MeshStandardMaterial({ color: cat.accent, roughness: 0.6 }),
+            new THREE.MeshStandardMaterial({ color: 0xfffff0, roughness: 0.9 }),
+            new THREE.MeshStandardMaterial({ color: cat.accent, roughness: 0.6 }),
+            new THREE.MeshStandardMaterial({ map: spine, roughness: 0.5 }),
+            new THREE.MeshStandardMaterial({ color: cat.accent, roughness: 0.6 })
+          ];
+          const mesh = new THREE.Mesh(geo, mats);
+          mesh.position.set(bx + bw / 2, by + bh / 2, 0);
+          mesh.rotation.z = (seededRand(ti + 100) - 0.5) * 0.06;
+          mesh.castShadow = mesh.receiveShadow = true;
+          mesh.userData = { task, type: 'book', baseY: by + bh / 2 };
+          shelfGroup.add(mesh); bookMeshes.push(mesh);
+          bx += bw + 0.04;
+        });
 
-      // Bottom shelf
-      const bottomGeo = new THREE.BoxGeometry(shelfW + sideThick * 2, shelfThick, shelfD + 0.1);
-      const bottomMesh = new THREE.Mesh(bottomGeo, woodMat);
-      bottomMesh.position.set(offsetX, offsetY, 0);
-      bottomMesh.castShadow = true;
-      bottomMesh.receiveShadow = true;
-      shelfGroup.add(bottomMesh);
-
-      // Top shelf
-      const topMesh = new THREE.Mesh(bottomGeo, woodMat);
-      topMesh.position.set(offsetX, offsetY + shelfH, 0);
-      topMesh.castShadow = true;
-      topMesh.receiveShadow = true;
-      shelfGroup.add(topMesh);
-
-      // Left side
-      const sideGeo = new THREE.BoxGeometry(sideThick, shelfH, shelfD);
-      const leftMesh = new THREE.Mesh(sideGeo, woodMat);
-      leftMesh.position.set(offsetX - shelfW / 2 - sideThick / 2, offsetY + shelfH / 2, 0);
-      leftMesh.castShadow = true;
-      leftMesh.receiveShadow = true;
-      shelfGroup.add(leftMesh);
-
-      // Right side
-      const rightMesh = new THREE.Mesh(sideGeo, woodMat);
-      rightMesh.position.set(offsetX + shelfW / 2 + sideThick / 2, offsetY + shelfH / 2, 0);
-      rightMesh.castShadow = true;
-      rightMesh.receiveShadow = true;
-      shelfGroup.add(rightMesh);
-
-      // Category label on shelf edge
-      const labelCanvas = document.createElement('canvas');
-      labelCanvas.width = 256;
-      labelCanvas.height = 32;
-      const lctx = labelCanvas.getContext('2d');
-      lctx.fillStyle = 'rgba(232,213,183,0.8)';
-      lctx.font = 'bold 18px Inter, sans-serif';
-      lctx.textAlign = 'left';
-      lctx.textBaseline = 'middle';
-      lctx.fillText(cat.name, 8, 16);
-      const labelTex = new THREE.CanvasTexture(labelCanvas);
-      const labelGeo = new THREE.PlaneGeometry(1.5, 0.18);
-      const labelMat = new THREE.MeshBasicMaterial({ map: labelTex, transparent: true });
-      const labelMesh = new THREE.Mesh(labelGeo, labelMat);
-      labelMesh.position.set(offsetX - shelfW / 2 + 1, offsetY + shelfH - 0.04, shelfD / 2 + 0.06);
-      shelfGroup.add(labelMesh);
-
-      // Add real books
-      const tasks = tasksByLabel[cat.name] || [];
-      let bookX = offsetX - shelfW / 2 + 0.25;
-      const bookBaseY = offsetY + shelfThick / 2;
-
-      tasks.forEach((task) => {
-        const tw = TIMEFRAME_WIDTHS[task.timeframe] || TIMEFRAME_WIDTHS['medium'];
-        const bookWidth = tw * 0.012;
-        const bookHeight = 1.4 + Math.random() * 0.5;
-        const bookDepth = 0.85 + Math.random() * 0.2;
-
-        const bookGeo = new THREE.BoxGeometry(bookWidth, bookHeight, bookDepth);
-        const spineTex = createBookTexture(cat.accent, task.name, 128, 512);
-
-        const bookMaterials = [
-          new THREE.MeshStandardMaterial({ color: cat.accent, roughness: 0.6 }), // right
-          new THREE.MeshStandardMaterial({ color: cat.accent, roughness: 0.6 }), // left
-          new THREE.MeshStandardMaterial({ color: 0xfffff0, roughness: 0.9 }),   // top (pages)
-          new THREE.MeshStandardMaterial({ color: cat.accent, roughness: 0.6 }), // bottom
-          new THREE.MeshStandardMaterial({ map: spineTex, roughness: 0.5 }),      // front (spine)
-          new THREE.MeshStandardMaterial({ color: cat.accent, roughness: 0.6 })  // back
-        ];
-
-        const bookMesh = new THREE.Mesh(bookGeo, bookMaterials);
-        const tilt = (Math.random() - 0.5) * 0.06;
-        bookMesh.position.set(bookX + bookWidth / 2, bookBaseY + bookHeight / 2, 0);
-        bookMesh.rotation.z = tilt;
-        bookMesh.castShadow = true;
-        bookMesh.receiveShadow = true;
-        bookMesh.userData = { task, type: 'book' };
-        shelfGroup.add(bookMesh);
-        bookMeshesRef.current.push(bookMesh);
-
-        bookX += bookWidth + 0.04;
+        // Ghost books
+        const ghostPresets = [{ w: 0.45, h: 1.5 },{ w: 0.6, h: 1.8 },{ w: 0.5, h: 1.3 },{ w: 0.7, h: 1.9 },{ w: 0.4, h: 1.1 },{ w: 0.55, h: 1.6 }];
+        for (let g = 0; g < Math.max(2, 5 - tasks.length); g++) {
+          const p = ghostPresets[g % ghostPresets.length];
+          if (bx + p.w > ox + shelfW / 2 - 0.15) break;
+          const gm = new THREE.Mesh(
+            new THREE.BoxGeometry(p.w * 0.55, p.h, 0.8),
+            new THREE.MeshStandardMaterial({ map: createGhostBookTexture(64, 256), transparent: true, opacity: 0.15, roughness: 0.9, color: 0xffffff })
+          );
+          gm.position.set(bx + p.w * 0.275, by + p.h / 2, 0);
+          gm.rotation.z = (seededRand(g + 200) - 0.5) * 0.04;
+          shelfGroup.add(gm);
+          bx += p.w * 0.55 + 0.04;
+        }
       });
 
-      // Ghost placeholder books to fill remaining space
-      const ghostCount = Math.max(2, 5 - tasks.length);
-      const ghostPresets = [
-        { w: 0.45, h: 1.5 }, { w: 0.6, h: 1.8 }, { w: 0.5, h: 1.3 },
-        { w: 0.7, h: 1.9 }, { w: 0.4, h: 1.1 }, { w: 0.55, h: 1.6 }
-      ];
+      shelfGroup.position.set(0, 0.05, 0);
+      scene.add(shelfGroup);
 
-      for (let g = 0; g < ghostCount; g++) {
-        const preset = ghostPresets[g % ghostPresets.length];
-        if (bookX + preset.w > offsetX + shelfW / 2 - 0.15) break;
+      // Raycaster for hover/click
+      const raycaster = new THREE.Raycaster();
+      const mouse = new THREE.Vector2(-999, -999);
+      let hoveredMesh = null;
 
-        const ghostGeo = new THREE.BoxGeometry(preset.w * 0.55, preset.h, 0.8);
-        const ghostTex = createGhostBookTexture(64, 256);
-        const ghostMat = new THREE.MeshStandardMaterial({
-          map: ghostTex,
-          transparent: true,
-          opacity: 0.15,
-          roughness: 0.9,
-          color: 0xffffff
-        });
-        const ghostMesh = new THREE.Mesh(ghostGeo, ghostMat);
-        ghostMesh.position.set(bookX + preset.w * 0.275, bookBaseY + preset.h / 2, 0);
-        ghostMesh.rotation.z = (Math.random() - 0.5) * 0.04;
-        shelfGroup.add(ghostMesh);
-        bookX += preset.w * 0.55 + 0.04;
-      }
+      const onMouseMove = (e) => {
+        const r = renderer.domElement.getBoundingClientRect();
+        mouse.x = ((e.clientX - r.left) / r.width) * 2 - 1;
+        mouse.y = -((e.clientY - r.top) / r.height) * 2 + 1;
+      };
+      const onClick = () => {
+        if (hoveredMesh && hoveredMesh.userData.task && onBookClick) {
+          onBookClick(hoveredMesh.userData.task);
+        }
+      };
+      renderer.domElement.addEventListener('mousemove', onMouseMove);
+      renderer.domElement.addEventListener('click', onClick);
+
+      // Animation loop
+      const animate = () => {
+        animFrameRef.current = requestAnimationFrame(animate);
+
+        // Hover detection
+        raycaster.setFromCamera(mouse, camera);
+        const hits = raycaster.intersectObjects(bookMeshes);
+        const hitObj = hits.length > 0 ? hits[0].object : null;
+
+        if (hoveredMesh && hoveredMesh !== hitObj) {
+          hoveredMesh.position.y = hoveredMesh.userData.baseY;
+          hoveredMesh.scale.set(1, 1, 1);
+          renderer.domElement.style.cursor = 'default';
+          hoveredMesh = null;
+        }
+        if (hitObj && hitObj !== hoveredMesh) {
+          hoveredMesh = hitObj;
+          hoveredMesh.position.y = hoveredMesh.userData.baseY + 0.15;
+          hoveredMesh.scale.set(1.05, 1.05, 1.05);
+          renderer.domElement.style.cursor = 'pointer';
+        }
+
+        renderer.render(scene, camera);
+      };
+      animate();
+
+      // Resize
+      const onResize = () => {
+        const nw = container.clientWidth, nh = container.clientHeight;
+        if (nw > 0 && nh > 0) { camera.aspect = nw / nh; camera.updateProjectionMatrix(); renderer.setSize(nw, nh); }
+      };
+      window.addEventListener('resize', onResize);
+
+      cleanupRef.current = () => {
+        cancelAnimationFrame(animFrameRef.current);
+        renderer.domElement.removeEventListener('mousemove', onMouseMove);
+        renderer.domElement.removeEventListener('click', onClick);
+        renderer.domElement.removeEventListener('pointerdown', onPointerDown);
+        renderer.domElement.removeEventListener('wheel', onWheel);
+        window.removeEventListener('pointerup', onPointerUp);
+        window.removeEventListener('pointermove', onPointerMove);
+        window.removeEventListener('resize', onResize);
+        renderer.dispose();
+        if (container.contains(renderer.domElement)) container.removeChild(renderer.domElement);
+      };
     });
 
-    // Center the shelf
-    shelfGroup.position.set(0, 0.05, 0);
-    scene.add(shelfGroup);
-
-    // Mouse interaction
-    const handleMouseMove = (e) => {
-      const rect = renderer.domElement.getBoundingClientRect();
-      mouseRef.current.x = ((e.clientX - rect.left) / rect.width) * 2 - 1;
-      mouseRef.current.y = -((e.clientY - rect.top) / rect.height) * 2 + 1;
-    };
-
-    const handleClick = (e) => {
-      raycasterRef.current.setFromCamera(mouseRef.current, camera);
-      const intersects = raycasterRef.current.intersectObjects(bookMeshesRef.current);
-      if (intersects.length > 0) {
-        const hit = intersects[0].object;
-        if (hit.userData.task && onBookClick) {
-          onBookClick(hit.userData.task);
-        }
-      }
-    };
-
-    renderer.domElement.addEventListener('mousemove', handleMouseMove);
-    renderer.domElement.addEventListener('click', handleClick);
-
-    // Animation loop
-    const animate = () => {
-      animFrameRef.current = requestAnimationFrame(animate);
-      controls.update();
-
-      // Hover detection
-      raycasterRef.current.setFromCamera(mouseRef.current, camera);
-      const intersects = raycasterRef.current.intersectObjects(bookMeshesRef.current);
-
-      if (hoveredRef.current && hoveredRef.current !== (intersects[0]?.object || null)) {
-        // Reset previous hovered
-        hoveredRef.current.position.y -= 0.15;
-        hoveredRef.current.scale.set(1, 1, 1);
-        renderer.domElement.style.cursor = 'default';
-        hoveredRef.current = null;
-      }
-
-      if (intersects.length > 0 && intersects[0].object !== hoveredRef.current) {
-        hoveredRef.current = intersects[0].object;
-        hoveredRef.current.position.y += 0.15;
-        hoveredRef.current.scale.set(1.05, 1.05, 1.05);
-        renderer.domElement.style.cursor = 'pointer';
-      }
-
-      renderer.render(scene, camera);
-    };
-    animate();
-
-    // Resize handler
-    const handleResize = () => {
-      const w = container.clientWidth;
-      const h = container.clientHeight;
-      camera.aspect = w / h;
-      camera.updateProjectionMatrix();
-      renderer.setSize(w, h);
-    };
-    window.addEventListener('resize', handleResize);
-
     return () => {
-      cancelAnimationFrame(animFrameRef.current);
-      renderer.domElement.removeEventListener('mousemove', handleMouseMove);
-      renderer.domElement.removeEventListener('click', handleClick);
-      window.removeEventListener('resize', handleResize);
-      controls.dispose();
-      renderer.dispose();
-      bookMeshesRef.current = [];
-      hoveredRef.current = null;
-      if (container.contains(renderer.domElement)) {
-        container.removeChild(renderer.domElement);
-      }
+      cancelAnimationFrame(initFrame);
+      if (cleanupRef.current) cleanupRef.current();
     };
   }, [categories, tasksByLabel, onBookClick, createWoodTexture, createBookTexture, createGhostBookTexture]);
 
-  return (
-    <div
-      ref={mountRef}
-      className="w-full h-full rounded-xl overflow-hidden"
-      style={{ touchAction: 'none' }}
-    />
-  );
+  return <div ref={mountRef} className="w-full h-full rounded-xl overflow-hidden" style={{ touchAction: 'none' }} />;
 };
 
 /* ── Shared Task Form (used by both Add and Edit) ── */
@@ -742,67 +595,130 @@ const TaskForm = ({ formData, setFormData, categories, onSubmit, submitLabel }) 
   </form>
 );
 
-/* ── Task Detail Modal (view + edit + complete + delete) ── */
+/* ── Task Detail Modal — styled as a book back cover ── */
 const TaskDetailModal = ({ task, onClose, onComplete, onDelete, onEdit, categories }) => {
   const cat = (categories || []).find(c => c.name === task.label);
-  const shelfColor = cat || { accent: '#8B5CF6' };
+  const accent = cat ? cat.accent : '#8B5CF6';
   const formatDate = (ds) => ds ? new Date(ds).toLocaleDateString('en-US', { weekday: 'short', month: 'short', day: 'numeric' }) : 'No due date';
   const [editing, setEditing] = useState(false);
   const [formData, setFormData] = useState({
-    name: task.name,
-    label: task.label,
-    description: task.description || '',
-    dueDate: task.dueDate || '',
-    timeframe: task.timeframe || 'medium'
+    name: task.name, label: task.label, description: task.description || '',
+    dueDate: task.dueDate || '', timeframe: task.timeframe || 'medium'
   });
+  const handleSave = (e) => { e.preventDefault(); if (formData.name.trim()) { onEdit(task.id, formData); onClose(); } };
 
-  const handleSave = (e) => {
-    e.preventDefault();
-    if (formData.name.trim()) {
-      onEdit(task.id, formData);
-      onClose();
-    }
+  /* Darken accent for the book back cover */
+  const darken = (hex, amount) => {
+    const n = parseInt(hex.replace('#', ''), 16);
+    const r = Math.max(0, (n >> 16) - amount), g = Math.max(0, ((n >> 8) & 0xff) - amount), b = Math.max(0, (n & 0xff) - amount);
+    return `rgb(${r},${g},${b})`;
   };
+  const bgDark = darken(accent, 40);
+  const bgDarker = darken(accent, 70);
+
+  /* Simple hash for the "ISBN" */
+  const isbn = useMemo(() => {
+    const h = (task.id || '').split('').reduce((a, c) => ((a << 5) - a + c.charCodeAt(0)) | 0, 0);
+    return `978-0-${Math.abs(h % 9000 + 1000)}-${Math.abs((h >> 8) % 9000 + 1000)}-${Math.abs(h % 10)}`;
+  }, [task.id]);
 
   return (
     <motion.div className="fixed inset-0 z-50 flex items-center justify-center p-4 modal-backdrop" initial={{ opacity: 0 }} animate={{ opacity: 1 }} exit={{ opacity: 0 }} onClick={onClose}>
-      <motion.div className="bg-white relative w-full max-w-lg rounded-xl overflow-hidden shadow-xl" initial={{ scale: 0.9, y: 20 }} animate={{ scale: 1, y: 0 }} exit={{ scale: 0.9, y: 20 }} transition={{ type: "spring", stiffness: 300, damping: 25 }} onClick={(e) => e.stopPropagation()}>
-        <button onClick={onClose} className="absolute top-3 right-3 w-8 h-8 rounded-full bg-gray-100 hover:bg-gray-200 flex items-center justify-center z-10"><Icons.X /></button>
-        <div className="p-6">
-          {editing ? (
-            <>
-              <div className="flex items-center justify-between mb-4">
-                <h2 className="text-lg font-bold text-gray-800">Edit Book</h2>
+      <motion.div
+        className="book-cover relative w-full max-w-md shadow-2xl"
+        style={{ background: `linear-gradient(135deg, ${accent} 0%, ${bgDark} 50%, ${bgDarker} 100%)` }}
+        initial={{ scale: 0.9, y: 20, rotateY: 10 }}
+        animate={{ scale: 1, y: 0, rotateY: 0 }}
+        exit={{ scale: 0.9, y: 20, rotateY: -10 }}
+        transition={{ type: "spring", stiffness: 300, damping: 25 }}
+        onClick={(e) => e.stopPropagation()}
+      >
+        {/* Close button */}
+        <button onClick={onClose} className="absolute top-3 right-3 w-7 h-7 rounded-full bg-white/15 hover:bg-white/25 flex items-center justify-center z-10 text-white/80 hover:text-white transition-colors"><Icons.X /></button>
+
+        {editing ? (
+          <div className="p-6 bg-white rounded-r-xl" style={{ borderRadius: '4px 12px 12px 4px' }}>
+            <h2 className="text-lg font-bold text-gray-800 mb-4">Edit Book</h2>
+            <TaskForm formData={formData} setFormData={setFormData} categories={categories} onSubmit={handleSave} submitLabel="Save Changes" />
+          </div>
+        ) : (
+          <div className="p-6 pl-8 relative z-1">
+            {/* Top gold rule */}
+            <div className="h-px mb-5" style={{ background: `linear-gradient(to right, transparent, rgba(218,165,32,0.5), transparent)` }} />
+
+            {/* Shelf badge */}
+            <div className="inline-block px-3 py-1 rounded-full text-xs font-bold uppercase tracking-widest mb-4" style={{ background: 'rgba(255,255,255,0.12)', color: 'rgba(255,255,255,0.9)', border: '1px solid rgba(255,255,255,0.15)' }}>
+              {task.label}
+            </div>
+
+            {/* Title */}
+            <h2 className="text-2xl font-extrabold text-white mb-1 leading-tight" style={{ textShadow: '0 2px 8px rgba(0,0,0,0.3)' }}>{task.name}</h2>
+
+            {/* Due date */}
+            <div className="flex items-center gap-1.5 text-white/60 text-xs mb-5">
+              <Icons.Calendar /><span>{formatDate(task.dueDate)}</span>
+              <span className="mx-1 text-white/30">&middot;</span>
+              <span className="capitalize">{task.timeframe}</span>
+            </div>
+
+            {/* Gold rule */}
+            <div className="h-px mb-4" style={{ background: 'linear-gradient(to right, rgba(218,165,32,0.4), rgba(218,165,32,0.15), transparent)' }} />
+
+            {/* Blurb / Description */}
+            <div className="book-blurb text-sm mb-5 min-h-[60px]">
+              {task.description ? (
+                <div dangerouslySetInnerHTML={{ __html: marked.parse(task.description, { breaks: true }) }} />
+              ) : (
+                <p className="text-white/40 not-italic">No description yet. Click edit to add one.</p>
+              )}
+            </div>
+
+            {/* Bottom gold rule */}
+            <div className="h-px mb-4" style={{ background: 'linear-gradient(to right, transparent, rgba(218,165,32,0.4), transparent)' }} />
+
+            {/* ISBN / barcode area */}
+            <div className="flex items-end justify-between mb-5">
+              <div>
+                <div className="text-white/30 text-[9px] uppercase tracking-widest mb-1">Artisan Library</div>
+                <div className="font-mono text-white/40 text-[10px]">{isbn}</div>
               </div>
-              <TaskForm formData={formData} setFormData={setFormData} categories={categories} onSubmit={handleSave} submitLabel="Save Changes" />
-            </>
-          ) : (
-            <>
-              <div className="flex items-start gap-3 mb-4">
-                <div className="w-1.5 h-16 rounded-full" style={{ backgroundColor: shelfColor.accent }} />
-                <div className="flex-1">
-                  <span className="text-xs font-semibold uppercase tracking-wider px-2 py-0.5 rounded-full" style={{ backgroundColor: `${shelfColor.accent}15`, color: shelfColor.accent }}>{task.label}</span>
-                  <h2 className="text-xl font-bold text-gray-800 mt-2">{task.name}</h2>
-                  <div className="flex items-center gap-1.5 text-gray-500 text-xs mt-1"><Icons.Calendar /><span>{formatDate(task.dueDate)}</span></div>
-                </div>
+              {/* Mini barcode decoration */}
+              <div className="flex items-end gap-px h-6 opacity-30">
+                {[3,5,2,4,6,3,5,2,4,3,6,2,5,4,3,5,2,6,3,4].map((h, i) => (
+                  <div key={i} className="bg-white" style={{ width: i % 3 === 0 ? '2px' : '1px', height: `${h * 4}px` }} />
+                ))}
               </div>
-              <div className="border-t border-gray-200 my-4" />
-              <div className="mb-4">
-                <h4 className="text-xs font-semibold uppercase tracking-wider text-gray-400 mb-2">Description</h4>
-                <MarkdownContent content={task.description} />
-              </div>
-              <div className="mb-5">
-                <h4 className="text-xs font-semibold uppercase tracking-wider text-gray-400 mb-2">Timeframe</h4>
-                <span className="inline-flex items-center px-3 py-1 rounded-full text-xs font-semibold bg-purple-100 text-purple-700 capitalize">{task.timeframe}</span>
-              </div>
-              <div className="flex gap-2">
-                <motion.button className="flex-1 flex items-center justify-center gap-2 px-4 py-2.5 bg-artisan-purple text-white rounded-lg text-sm font-semibold hover:bg-artisan-purpleDark" whileHover={{ scale: 1.02 }} whileTap={{ scale: 0.98 }} onClick={() => { onComplete(task.id); onClose(); }}><Icons.Check />Complete</motion.button>
-                <motion.button className="flex items-center justify-center gap-1 px-4 py-2.5 bg-purple-50 text-artisan-purple rounded-lg text-sm font-semibold hover:bg-purple-100" whileHover={{ scale: 1.02 }} whileTap={{ scale: 0.98 }} onClick={() => setEditing(true)}><Icons.Edit />Edit</motion.button>
-                <motion.button className="flex items-center justify-center px-4 py-2.5 bg-red-50 text-red-600 rounded-lg text-sm font-semibold hover:bg-red-100" whileHover={{ scale: 1.02 }} whileTap={{ scale: 0.98 }} onClick={() => { onDelete(task.id); onClose(); }}><Icons.Trash /></motion.button>
-              </div>
-            </>
-          )}
-        </div>
+            </div>
+
+            {/* Action buttons */}
+            <div className="flex gap-2">
+              <motion.button
+                className="flex-1 flex items-center justify-center gap-2 px-4 py-2.5 rounded-lg text-sm font-semibold transition-colors"
+                style={{ background: 'rgba(255,255,255,0.15)', color: 'white', border: '1px solid rgba(255,255,255,0.2)' }}
+                whileHover={{ scale: 1.02, backgroundColor: 'rgba(255,255,255,0.25)' }}
+                whileTap={{ scale: 0.98 }}
+                onClick={() => { onComplete(task.id); onClose(); }}
+              ><Icons.Check />Complete</motion.button>
+              <motion.button
+                className="flex items-center justify-center gap-1 px-4 py-2.5 rounded-lg text-sm font-semibold transition-colors"
+                style={{ background: 'rgba(255,255,255,0.08)', color: 'rgba(255,255,255,0.8)', border: '1px solid rgba(255,255,255,0.1)' }}
+                whileHover={{ scale: 1.02 }}
+                whileTap={{ scale: 0.98 }}
+                onClick={() => setEditing(true)}
+              ><Icons.Edit />Edit</motion.button>
+              <motion.button
+                className="flex items-center justify-center px-3 py-2.5 rounded-lg text-sm font-semibold transition-colors"
+                style={{ background: 'rgba(255,70,70,0.15)', color: 'rgba(255,180,180,0.9)', border: '1px solid rgba(255,100,100,0.2)' }}
+                whileHover={{ scale: 1.02 }}
+                whileTap={{ scale: 0.98 }}
+                onClick={() => { onDelete(task.id); onClose(); }}
+              ><Icons.Trash /></motion.button>
+            </div>
+
+            {/* Bottom gold rule */}
+            <div className="h-px mt-5" style={{ background: `linear-gradient(to right, transparent, rgba(218,165,32,0.5), transparent)` }} />
+          </div>
+        )}
       </motion.div>
     </motion.div>
   );
@@ -914,16 +830,144 @@ const ArchiveView = ({ tasks, onRestore, onDelete, categories }) => {
   );
 };
 
+/* ── Onboarding Wizard ── */
+const OnboardingModal = ({ onFinish }) => {
+  const [step, setStep] = useState(0);
+  const [shelfCount, setShelfCount] = useState(4);
+  const [shelves, setShelves] = useState(
+    SUGGESTED_CATEGORIES.map(c => ({ ...c }))
+  );
+
+  // Keep shelves array in sync with count
+  const updateCount = (n) => {
+    setShelfCount(n);
+    setShelves(prev => {
+      if (n > prev.length) {
+        const extra = [];
+        for (let i = prev.length; i < n; i++) {
+          extra.push({ name: '', accent: PRESET_COLORS[i % PRESET_COLORS.length] });
+        }
+        return [...prev, ...extra];
+      }
+      return prev.slice(0, n);
+    });
+  };
+
+  const updateShelf = (idx, field, value) => {
+    setShelves(prev => prev.map((s, i) => i === idx ? { ...s, [field]: value } : s));
+  };
+
+  const canFinish = shelves.every(s => s.name.trim().length > 0);
+
+  const handleFinish = () => {
+    const cleaned = shelves.map(s => ({ name: s.name.trim(), accent: s.accent }));
+    onFinish(cleaned);
+  };
+
+  return (
+    <motion.div className="fixed inset-0 z-50 flex items-center justify-center p-4" style={{ background: 'rgba(0,0,0,0.5)' }} initial={{ opacity: 0 }} animate={{ opacity: 1 }}>
+      <motion.div
+        className="bg-white rounded-2xl w-full max-w-md overflow-hidden shadow-2xl"
+        initial={{ scale: 0.9, y: 30 }}
+        animate={{ scale: 1, y: 0 }}
+        transition={{ type: "spring", stiffness: 300, damping: 25 }}
+      >
+        {step === 0 ? (
+          /* Step 1: Welcome + shelf count */
+          <div className="p-6 text-center">
+            <div className="text-4xl mb-3">📚</div>
+            <h2 className="text-2xl font-extrabold text-gray-800 mb-2">Welcome to Artisan Todo</h2>
+            <p className="text-sm text-gray-500 mb-6">Your tasks, organized as books on a shelf. Let's set up your library.</p>
+
+            <div className="mb-6">
+              <label className="block text-xs font-semibold text-gray-600 mb-3 uppercase tracking-wider">How many shelves do you need?</label>
+              <div className="flex justify-center gap-2">
+                {[1, 2, 3, 4, 5, 6].map(n => (
+                  <button
+                    key={n}
+                    onClick={() => updateCount(n)}
+                    className={`w-10 h-10 rounded-xl text-sm font-bold transition-all ${shelfCount === n ? 'bg-artisan-purple text-white shadow-lg shadow-purple-300/40 scale-110' : 'bg-gray-100 text-gray-600 hover:bg-gray-200'}`}
+                  >{n}</button>
+                ))}
+              </div>
+            </div>
+
+            <motion.button
+              onClick={() => setStep(1)}
+              className="w-full px-4 py-3 bg-artisan-purple text-white rounded-xl text-sm font-semibold"
+              whileHover={{ scale: 1.02 }}
+              whileTap={{ scale: 0.98 }}
+            >Next: Name Your Shelves</motion.button>
+          </div>
+        ) : (
+          /* Step 2: Name and color each shelf */
+          <div className="p-6">
+            <h2 className="text-lg font-extrabold text-gray-800 mb-1">Name your shelves</h2>
+            <p className="text-xs text-gray-500 mb-4">Give each shelf a name and pick a colour.</p>
+
+            <div className="space-y-2 mb-5 max-h-64 overflow-y-auto custom-scrollbar pr-1">
+              {shelves.map((shelf, i) => (
+                <div key={i} className="flex items-center gap-2 bg-gray-50 rounded-xl px-3 py-2.5">
+                  <input
+                    type="color"
+                    value={shelf.accent}
+                    onChange={(e) => updateShelf(i, 'accent', e.target.value)}
+                    className="w-8 h-8 rounded-lg cursor-pointer border-0 p-0 flex-shrink-0"
+                  />
+                  <input
+                    type="text"
+                    value={shelf.name}
+                    onChange={(e) => updateShelf(i, 'name', e.target.value)}
+                    placeholder={SUGGESTED_CATEGORIES[i] ? SUGGESTED_CATEGORIES[i].name : `Shelf ${i + 1}`}
+                    className="flex-1 px-3 py-1.5 bg-white border border-gray-200 rounded-lg text-sm text-gray-800 placeholder-gray-400 focus:border-artisan-purple"
+                  />
+                  <div className="w-3 h-3 rounded-full flex-shrink-0" style={{ backgroundColor: shelf.accent }} />
+                </div>
+              ))}
+            </div>
+
+            {/* Quick-fill from suggestions */}
+            <div className="flex items-center gap-2 mb-4">
+              <span className="text-[10px] text-gray-400 uppercase tracking-wider">Quick fill:</span>
+              <button
+                onClick={() => setShelves(prev => prev.map((s, i) => ({ ...s, name: s.name || (SUGGESTED_CATEGORIES[i] ? SUGGESTED_CATEGORIES[i].name : s.name), accent: SUGGESTED_CATEGORIES[i] ? SUGGESTED_CATEGORIES[i].accent : s.accent })))}
+                className="text-xs text-artisan-purple hover:text-artisan-purpleDark font-medium"
+              >Use suggestions</button>
+            </div>
+
+            <div className="flex gap-2">
+              <button onClick={() => setStep(0)} className="px-4 py-2.5 bg-gray-100 text-gray-600 rounded-xl text-sm font-semibold hover:bg-gray-200 transition-colors">Back</button>
+              <motion.button
+                onClick={handleFinish}
+                disabled={!canFinish}
+                className={`flex-1 px-4 py-2.5 rounded-xl text-sm font-semibold transition-colors ${canFinish ? 'bg-artisan-purple text-white' : 'bg-gray-200 text-gray-400 cursor-not-allowed'}`}
+                whileHover={canFinish ? { scale: 1.02 } : {}}
+                whileTap={canFinish ? { scale: 0.98 } : {}}
+              >Create My Library</motion.button>
+            </div>
+          </div>
+        )}
+      </motion.div>
+    </motion.div>
+  );
+};
+
 /* ── Main App ── */
 const App = () => {
   const [tasks, setTasks] = useLocalStorage('artisan-todo-tasks', []);
   const [categories, setCategories] = useLocalStorage('artisan-todo-categories', DEFAULT_CATEGORIES);
+  const [onboarded, setOnboarded] = useLocalStorage('artisan-todo-onboarded', false);
   const [activeView, setActiveView] = useState('library');
   const [showAddModal, setShowAddModal] = useState(false);
   const [showCategoryManager, setShowCategoryManager] = useState(false);
   const [selectedTask, setSelectedTask] = useState(null);
   const [flickeringId, setFlickeringId] = useState(null);
   const [view3D, setView3D] = useState(false);
+
+  const handleOnboardingFinish = useCallback((newCats) => {
+    setCategories(newCats);
+    setOnboarded(true);
+  }, [setCategories, setOnboarded]);
 
   const activeTasks = tasks.filter(t => !t.completed);
   const archivedTasks = tasks.filter(t => t.completed);
@@ -1023,6 +1067,7 @@ const App = () => {
       </main>
 
       <AnimatePresence>
+        {!onboarded && <OnboardingModal onFinish={handleOnboardingFinish} />}
         {showAddModal && <AddTaskModal onClose={() => setShowAddModal(false)} onAdd={handleAddTask} categories={categories} />}
         {selectedTask && <TaskDetailModal task={selectedTask} onClose={() => setSelectedTask(null)} onComplete={handleComplete} onDelete={handleDelete} onEdit={handleEditTask} categories={categories} />}
         {showCategoryManager && <CategoryManagerModal onClose={() => setShowCategoryManager(false)} categories={categories} onSave={setCategories} />}
