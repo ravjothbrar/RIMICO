@@ -49,7 +49,8 @@ const Icons = {
   User:     () => <svg className="w-3.5 h-3.5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M16 7a4 4 0 11-8 0 4 4 0 018 0zM12 14a7 7 0 00-7 7h14a7 7 0 00-7-7z" /></svg>,
   Settings: () => <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M10.325 4.317c.426-1.756 2.924-1.756 3.35 0a1.724 1.724 0 002.573 1.066c1.543-.94 3.31.826 2.37 2.37a1.724 1.724 0 001.066 2.573c1.756.426 1.756 2.924 0 3.35a1.724 1.724 0 00-1.066 2.573c.94 1.543-.826 3.31-2.37 2.37a1.724 1.724 0 00-2.573 1.066c-.426 1.756-2.924 1.756-3.35 0a1.724 1.724 0 00-2.573-1.066c-1.543.94-3.31-.826-2.37-2.37a1.724 1.724 0 00-1.066-2.573c-1.756-.426-1.756-2.924 0-3.35a1.724 1.724 0 001.066-2.573c-.94-1.543.826-3.31 2.37-2.37.996.608 2.296.07 2.572-1.065z" /><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M15 12a3 3 0 11-6 0 3 3 0 016 0z" /></svg>,
   Cube3D: () => <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M21 16V8a2 2 0 00-1-1.73l-7-4a2 2 0 00-2 0l-7 4A2 2 0 003 8v8a2 2 0 001 1.73l7 4a2 2 0 002 0l7-4A2 2 0 0021 16z" /><polyline strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} points="3.27 6.96 12 12.01 20.73 6.96" /><line strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} x1="12" y1="22.08" x2="12" y2="12" /></svg>,
-  Grid2D: () => <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M4 6a2 2 0 012-2h2a2 2 0 012 2v2a2 2 0 01-2 2H6a2 2 0 01-2-2V6zm10 0a2 2 0 012-2h2a2 2 0 012 2v2a2 2 0 01-2 2h-2a2 2 0 01-2-2V6zM4 16a2 2 0 012-2h2a2 2 0 012 2v2a2 2 0 01-2 2H6a2 2 0 01-2-2v-2zm10 0a2 2 0 012-2h2a2 2 0 012 2v2a2 2 0 01-2 2h-2a2 2 0 01-2-2v-2z" /></svg>
+  Grid2D: () => <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M4 6a2 2 0 012-2h2a2 2 0 012 2v2a2 2 0 01-2 2H6a2 2 0 01-2-2V6zm10 0a2 2 0 012-2h2a2 2 0 012 2v2a2 2 0 01-2 2h-2a2 2 0 01-2-2V6zM4 16a2 2 0 012-2h2a2 2 0 012 2v2a2 2 0 01-2 2H6a2 2 0 01-2-2v-2zm10 0a2 2 0 012-2h2a2 2 0 012 2v2a2 2 0 01-2 2h-2a2 2 0 01-2-2v-2z" /></svg>,
+  Question: () => <svg className="w-3.5 h-3.5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M8.228 9c.549-1.165 2.03-2 3.772-2 2.21 0 4 1.343 4 3 0 1.4-1.278 2.575-3.006 2.907-.542.104-.994.54-.994 1.093m0 3h.01M21 12a9 9 0 11-18 0 9 9 0 0118 0z" /></svg>
 };
 
 /* ── Small components ── */
@@ -625,8 +626,8 @@ const TaskDetailModal = ({ task, onClose, onComplete, onDelete, onEdit, categori
   return (
     <motion.div className="fixed inset-0 z-50 flex items-center justify-center p-4 modal-backdrop" initial={{ opacity: 0 }} animate={{ opacity: 1 }} exit={{ opacity: 0 }} onClick={onClose}>
       <motion.div
-        className="book-cover relative w-full max-w-md shadow-2xl"
-        style={{ background: `linear-gradient(135deg, ${accent} 0%, ${bgDark} 50%, ${bgDarker} 100%)` }}
+        className="book-cover relative w-full max-w-xs shadow-2xl flex flex-col"
+        style={{ background: `linear-gradient(170deg, ${accent} 0%, ${bgDark} 45%, ${bgDarker} 100%)` }}
         initial={{ scale: 0.9, y: 20, rotateY: 10 }}
         animate={{ scale: 1, y: 0, rotateY: 0 }}
         exit={{ scale: 0.9, y: 20, rotateY: -10 }}
@@ -634,38 +635,38 @@ const TaskDetailModal = ({ task, onClose, onComplete, onDelete, onEdit, categori
         onClick={(e) => e.stopPropagation()}
       >
         {/* Close button */}
-        <button onClick={onClose} className="absolute top-3 right-3 w-7 h-7 rounded-full bg-white/15 hover:bg-white/25 flex items-center justify-center z-10 text-white/80 hover:text-white transition-colors"><Icons.X /></button>
+        <button onClick={onClose} className="absolute top-3 right-3 w-6 h-6 rounded-full bg-white/15 hover:bg-white/25 flex items-center justify-center z-10 text-white/80 hover:text-white transition-colors"><Icons.X /></button>
 
         {editing ? (
-          <div className="p-6 bg-white rounded-r-xl" style={{ borderRadius: '4px 12px 12px 4px' }}>
-            <h2 className="text-lg font-bold text-gray-800 mb-4">Edit Book</h2>
+          <div className="p-5 bg-white flex-1 overflow-y-auto custom-scrollbar" style={{ borderRadius: '3px 6px 6px 3px' }}>
+            <h2 className="text-base font-bold text-gray-800 mb-3">Edit Book</h2>
             <TaskForm formData={formData} setFormData={setFormData} categories={categories} onSubmit={handleSave} submitLabel="Save Changes" />
           </div>
         ) : (
-          <div className="p-6 pl-8 relative z-1">
+          <div className="flex flex-col flex-1 px-5 pl-7 py-5 relative z-1 overflow-y-auto custom-scrollbar">
             {/* Top gold rule */}
-            <div className="h-px mb-5" style={{ background: `linear-gradient(to right, transparent, rgba(218,165,32,0.5), transparent)` }} />
+            <div className="h-px mb-4 flex-shrink-0" style={{ background: 'linear-gradient(to right, transparent, rgba(218,165,32,0.5), transparent)' }} />
 
             {/* Shelf badge */}
-            <div className="inline-block px-3 py-1 rounded-full text-xs font-bold uppercase tracking-widest mb-4" style={{ background: 'rgba(255,255,255,0.12)', color: 'rgba(255,255,255,0.9)', border: '1px solid rgba(255,255,255,0.15)' }}>
+            <div className="inline-block self-start px-2.5 py-0.5 rounded-full text-[10px] font-bold uppercase tracking-widest mb-3 flex-shrink-0" style={{ background: 'rgba(255,255,255,0.12)', color: 'rgba(255,255,255,0.9)', border: '1px solid rgba(255,255,255,0.15)' }}>
               {task.label}
             </div>
 
             {/* Title */}
-            <h2 className="text-2xl font-extrabold text-white mb-1 leading-tight" style={{ textShadow: '0 2px 8px rgba(0,0,0,0.3)' }}>{task.name}</h2>
+            <h2 className="text-xl font-extrabold text-white mb-1 leading-tight flex-shrink-0" style={{ textShadow: '0 2px 8px rgba(0,0,0,0.3)' }}>{task.name}</h2>
 
             {/* Due date */}
-            <div className="flex items-center gap-1.5 text-white/60 text-xs mb-5">
+            <div className="flex items-center gap-1.5 text-white/60 text-[11px] mb-4 flex-shrink-0">
               <Icons.Calendar /><span>{formatDate(task.dueDate)}</span>
               <span className="mx-1 text-white/30">&middot;</span>
               <span className="capitalize">{task.timeframe}</span>
             </div>
 
             {/* Gold rule */}
-            <div className="h-px mb-4" style={{ background: 'linear-gradient(to right, rgba(218,165,32,0.4), rgba(218,165,32,0.15), transparent)' }} />
+            <div className="h-px mb-3 flex-shrink-0" style={{ background: 'linear-gradient(to right, rgba(218,165,32,0.4), rgba(218,165,32,0.15), transparent)' }} />
 
-            {/* Blurb / Description */}
-            <div className="book-blurb text-sm mb-5 min-h-[60px]">
+            {/* Blurb / Description — fills middle of book */}
+            <div className="book-blurb text-sm flex-1 min-h-0">
               {task.description ? (
                 <div dangerouslySetInnerHTML={{ __html: marked.parse(task.description, { breaks: true }) }} />
               ) : (
@@ -674,40 +675,40 @@ const TaskDetailModal = ({ task, onClose, onComplete, onDelete, onEdit, categori
             </div>
 
             {/* Bottom gold rule */}
-            <div className="h-px mb-4" style={{ background: 'linear-gradient(to right, transparent, rgba(218,165,32,0.4), transparent)' }} />
+            <div className="h-px my-3 flex-shrink-0" style={{ background: 'linear-gradient(to right, transparent, rgba(218,165,32,0.4), transparent)' }} />
 
             {/* ISBN / barcode area */}
-            <div className="flex items-end justify-between mb-5">
+            <div className="flex items-end justify-between mb-4 flex-shrink-0">
               <div>
-                <div className="text-white/30 text-[9px] uppercase tracking-widest mb-1">Artisan Library</div>
-                <div className="font-mono text-white/40 text-[10px]">{isbn}</div>
+                <div className="text-white/30 text-[8px] uppercase tracking-widest mb-0.5">Artisan Library</div>
+                <div className="font-mono text-white/40 text-[9px]">{isbn}</div>
               </div>
               {/* Mini barcode decoration */}
-              <div className="flex items-end gap-px h-6 opacity-30">
-                {[3,5,2,4,6,3,5,2,4,3,6,2,5,4,3,5,2,6,3,4].map((h, i) => (
-                  <div key={i} className="bg-white" style={{ width: i % 3 === 0 ? '2px' : '1px', height: `${h * 4}px` }} />
+              <div className="flex items-end gap-px h-5 opacity-30">
+                {[3,5,2,4,6,3,5,2,4,3,6,2,5,4,3,5,2,6,3,4].map((bh, i) => (
+                  <div key={i} className="bg-white" style={{ width: i % 3 === 0 ? '2px' : '1px', height: `${bh * 3}px` }} />
                 ))}
               </div>
             </div>
 
             {/* Action buttons */}
-            <div className="flex gap-2">
+            <div className="flex gap-1.5 flex-shrink-0">
               <motion.button
-                className="flex-1 flex items-center justify-center gap-2 px-4 py-2.5 rounded-lg text-sm font-semibold transition-colors"
+                className="flex-1 flex items-center justify-center gap-1.5 px-3 py-2 rounded-md text-xs font-semibold transition-colors"
                 style={{ background: 'rgba(255,255,255,0.15)', color: 'white', border: '1px solid rgba(255,255,255,0.2)' }}
                 whileHover={{ scale: 1.02, backgroundColor: 'rgba(255,255,255,0.25)' }}
                 whileTap={{ scale: 0.98 }}
                 onClick={() => { onComplete(task.id); onClose(); }}
               ><Icons.Check />Complete</motion.button>
               <motion.button
-                className="flex items-center justify-center gap-1 px-4 py-2.5 rounded-lg text-sm font-semibold transition-colors"
+                className="flex items-center justify-center gap-1 px-3 py-2 rounded-md text-xs font-semibold transition-colors"
                 style={{ background: 'rgba(255,255,255,0.08)', color: 'rgba(255,255,255,0.8)', border: '1px solid rgba(255,255,255,0.1)' }}
                 whileHover={{ scale: 1.02 }}
                 whileTap={{ scale: 0.98 }}
                 onClick={() => setEditing(true)}
-              ><Icons.Edit />Edit</motion.button>
+              ><Icons.Edit /></motion.button>
               <motion.button
-                className="flex items-center justify-center px-3 py-2.5 rounded-lg text-sm font-semibold transition-colors"
+                className="flex items-center justify-center px-3 py-2 rounded-md text-xs font-semibold transition-colors"
                 style={{ background: 'rgba(255,70,70,0.15)', color: 'rgba(255,180,180,0.9)', border: '1px solid rgba(255,100,100,0.2)' }}
                 whileHover={{ scale: 1.02 }}
                 whileTap={{ scale: 0.98 }}
@@ -716,7 +717,7 @@ const TaskDetailModal = ({ task, onClose, onComplete, onDelete, onEdit, categori
             </div>
 
             {/* Bottom gold rule */}
-            <div className="h-px mt-5" style={{ background: `linear-gradient(to right, transparent, rgba(218,165,32,0.5), transparent)` }} />
+            <div className="h-px mt-4 flex-shrink-0" style={{ background: 'linear-gradient(to right, transparent, rgba(218,165,32,0.5), transparent)' }} />
           </div>
         )}
       </motion.div>
@@ -829,6 +830,80 @@ const ArchiveView = ({ tasks, onRestore, onDelete, categories }) => {
     </div>
   );
 };
+
+/* ── Why Page ── */
+const WhyPage = () => (
+  <div className="h-full overflow-auto custom-scrollbar">
+    <div className="max-w-lg mx-auto py-8 px-6">
+      {/* Header */}
+      <div className="text-center mb-8">
+        <div className="text-4xl mb-3">📖</div>
+        <h2 className="text-2xl font-extrabold text-artisan-purple mb-1">Why RIMICO?</h2>
+        <p className="text-xs text-gray-400 uppercase tracking-widest">The story behind the shelf</p>
+      </div>
+
+      {/* Content — styled like markdown on parchment */}
+      <div className="bg-white/80 rounded-xl border border-purple-100 shadow-sm p-6 space-y-5">
+
+        <div>
+          <h3 className="text-sm font-bold text-artisan-purple mb-2 uppercase tracking-wider">The Problem</h3>
+          <p className="text-sm text-gray-700 leading-relaxed">
+            I hate scattered to-do lists. I used to have half-formed lists in Notepad, Google Keep, note-taking apps, pinned emails to myself, and many more. It wasn't sustainable, and I wanted a simple, on-device way to have my tasks that actually <em className="text-artisan-purple font-medium not-italic">worked for me</em>.
+          </p>
+        </div>
+
+        <div className="h-px bg-gradient-to-r from-transparent via-purple-200 to-transparent" />
+
+        <div>
+          <h3 className="text-sm font-bold text-artisan-purple mb-2 uppercase tracking-wider">The Idea</h3>
+          <p className="text-sm text-gray-700 leading-relaxed">
+            I love reading &mdash; truly &mdash; and I wanted to merge my love of books with profound efficiency. Hence, <strong className="text-artisan-purple">RIMICO</strong> was born.
+          </p>
+        </div>
+
+        <div className="h-px bg-gradient-to-r from-transparent via-purple-200 to-transparent" />
+
+        <div>
+          <h3 className="text-sm font-bold text-artisan-purple mb-2 uppercase tracking-wider">How It Works</h3>
+          <div className="space-y-3">
+            <div className="flex gap-3 items-start">
+              <div className="w-6 h-6 rounded-full bg-purple-100 text-artisan-purple flex items-center justify-center flex-shrink-0 text-xs font-bold mt-0.5">1</div>
+              <p className="text-sm text-gray-700 leading-relaxed">Tasks are formatted as <strong>books</strong> on a library shelf, with each shelf representing a category you define.</p>
+            </div>
+            <div className="flex gap-3 items-start">
+              <div className="w-6 h-6 rounded-full bg-purple-100 text-artisan-purple flex items-center justify-center flex-shrink-0 text-xs font-bold mt-0.5">2</div>
+              <p className="text-sm text-gray-700 leading-relaxed">The <strong>timeframe</strong> determines the thickness of each book &mdash; quick tasks are slim, extended projects are thick volumes.</p>
+            </div>
+            <div className="flex gap-3 items-start">
+              <div className="w-6 h-6 rounded-full bg-purple-100 text-artisan-purple flex items-center justify-center flex-shrink-0 text-xs font-bold mt-0.5">3</div>
+              <p className="text-sm text-gray-700 leading-relaxed">The <strong>due date</strong> determines position &mdash; the most urgent tasks sit closest to the left, just like the next book you'd reach for.</p>
+            </div>
+          </div>
+        </div>
+
+        <div className="h-px bg-gradient-to-r from-transparent via-purple-200 to-transparent" />
+
+        <div>
+          <h3 className="text-sm font-bold text-artisan-purple mb-2 uppercase tracking-wider">Beyond a Simple Tool</h3>
+          <p className="text-sm text-gray-700 leading-relaxed">
+            It makes sense, for me, and feels cleaner than simple indents. Adding <code className="px-1.5 py-0.5 bg-purple-50 text-artisan-purple rounded text-xs font-mono">.md</code> formatting and an interactive 3D shelf view brought this project from a simple tool into part of my daily workflow.
+          </p>
+        </div>
+
+        <div className="h-px bg-gradient-to-r from-transparent via-purple-200 to-transparent" />
+
+        <p className="text-sm text-gray-600 leading-relaxed italic text-center pt-1">
+          I hope you enjoy <strong className="text-artisan-purple not-italic">RIMICO</strong> as much as I do.
+        </p>
+      </div>
+
+      {/* Signature */}
+      <div className="text-center mt-6">
+        <p className="text-xs text-gray-400">&mdash; Ravjoth</p>
+      </div>
+    </div>
+  </div>
+);
 
 /* ── Onboarding Wizard ── */
 const OnboardingModal = ({ onFinish }) => {
@@ -1020,9 +1095,15 @@ const App = () => {
       <header className="purple-banner relative z-10 px-4 py-3">
         <HeaderMiniBlobs />
         <div className="flex items-center justify-between relative z-10">
-          <AttributionLink />
-          <h1 onClick={goToLibrary} className="title-link text-2xl font-extrabold text-artisan-purple">
-            Artisan Todo
+          <div className="flex items-center gap-1.5">
+            <AttributionLink />
+            <button onClick={() => setActiveView('why')} className={`attribution-btn inline-flex items-center gap-1 px-2.5 py-1.5 rounded-full text-xs font-medium transition-colors ${activeView === 'why' ? 'bg-artisan-purple text-white border-artisan-purple' : 'bg-white/90 text-gray-600'}`}>
+              <Icons.Question />Why?
+            </button>
+          </div>
+          <h1 onClick={goToLibrary} className="title-link font-extrabold text-artisan-purple flex flex-col items-center leading-none">
+            <span className="text-xl">RIMICO</span>
+            <span className="text-[8px] font-medium text-gray-400 tracking-widest uppercase mt-0.5">The Artisan To-Do List for Readers</span>
           </h1>
           <div className="flex items-center gap-2">
             <button onClick={() => setView3D(v => !v)} className={`w-8 h-8 rounded-full flex items-center justify-center shadow-sm transition-colors ${view3D ? 'bg-artisan-purple text-white' : 'bg-white/90 text-gray-500 hover:text-artisan-purple'}`} title={view3D ? 'Switch to 2D' : 'Switch to 3D'}>
@@ -1058,6 +1139,10 @@ const App = () => {
                 </div>
               </motion.div>
             )
+          ) : activeView === 'why' ? (
+            <motion.div key="why" className="h-full bg-white/50 rounded-xl overflow-hidden border border-white/60" initial={{ opacity: 0 }} animate={{ opacity: 1 }} exit={{ opacity: 0 }}>
+              <WhyPage />
+            </motion.div>
           ) : (
             <motion.div key="archive" className="h-full bg-white/50 rounded-xl overflow-hidden border border-white/60" initial={{ opacity: 0 }} animate={{ opacity: 1 }} exit={{ opacity: 0 }}>
               <ArchiveView tasks={archivedTasks} onRestore={handleRestore} onDelete={handleDelete} categories={categories} />
