@@ -155,6 +155,16 @@ html, body {
   border-radius: 20px;
 }
 
+/* Attribution Button */
+.attribution-btn {
+  border: 1.5px solid rgba(139, 92, 246, 0.25);
+  transition: all 0.2s ease;
+}
+.attribution-btn:hover {
+  border-color: #8B5CF6;
+  background: rgba(139, 92, 246, 0.08);
+}
+
 /* Coming Soon Badge */
 .coming-soon-badge {
   display: inline-block;

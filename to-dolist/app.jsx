@@ -1101,10 +1101,15 @@ const App = () => {
               <Icons.Question />Why?
             </button>
           </div>
-          <h1 onClick={goToLibrary} className="title-link font-extrabold text-artisan-purple flex flex-col items-center leading-none">
-            <span className="text-xl">RIMICO</span>
-            <span className="text-[8px] font-medium text-gray-400 tracking-widest uppercase mt-0.5">The Artisan To-Do List for Readers</span>
-          </h1>
+          <div className="flex items-center gap-3">
+            <a href="../" className="rimico-home-btn px-3.5 py-1.5 rounded-lg font-extrabold text-lg text-artisan-purple">
+              RIMICO
+            </a>
+            <span className="text-artisan-purple/30 font-light text-lg select-none">/</span>
+            <span onClick={goToLibrary} className="title-link font-bold text-lg text-artisan-purple cursor-pointer">
+              The Artisan To-Do List for Readers
+            </span>
+          </div>
           <div className="flex items-center gap-2">
             <button onClick={() => setView3D(v => !v)} className={`w-8 h-8 rounded-full flex items-center justify-center shadow-sm transition-colors ${view3D ? 'bg-artisan-purple text-white' : 'bg-white/90 text-gray-500 hover:text-artisan-purple'}`} title={view3D ? 'Switch to 2D' : 'Switch to 3D'}>
               {view3D ? <Icons.Grid2D /> : <Icons.Cube3D />}
