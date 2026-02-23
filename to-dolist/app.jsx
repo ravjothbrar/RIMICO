@@ -199,7 +199,7 @@ const BookSpine = ({ task, onClick, onComplete, isFlickering, shelfColors }) => 
 };
 
 /* ── Placeholder Ghost Books ── */
-const PlaceholderBooks = ({ count }) => {
+const PlaceholderBooks = ({ count, onClick }) => {
   const ghostBooks = useMemo(() => {
     const presets = [
       { w: 38, h: '75%' }, { w: 52, h: '88%' }, { w: 44, h: '68%' },
@@ -213,8 +213,10 @@ const PlaceholderBooks = ({ count }) => {
   return ghostBooks.map((book, i) => (
     <div
       key={`ghost-${i}`}
-      className="ghost-book mx-0.5 self-end"
+      className="ghost-book mx-0.5 self-end cursor-pointer hover:border-white/30 transition-colors"
       style={{ width: `${book.w}px`, height: book.h }}
+      onClick={onClick}
+      title="Click to add a task"
     >
       {/* Bottom decorative line */}
       <div className="absolute bottom-6 left-3 right-3 h-px" style={{ background: 'linear-gradient(to right, transparent, rgba(255,255,255,0.07), transparent)' }} />
@@ -223,8 +225,11 @@ const PlaceholderBooks = ({ count }) => {
 };
 
 /* ── Shelf Quadrant ── */
-const ShelfQuadrant = ({ label, tasks, onBookClick, onComplete, flickeringId, shelfColors }) => {
+const ShelfQuadrant = ({ label, tasks, onBookClick, onComplete, flickeringId, shelfColors, onAddTask }) => {
   const colors = shelfColors || { accent: '#8B5CF6' };
+  const handleShelfClick = useCallback((e) => {
+    if (e.target === e.currentTarget && onAddTask) onAddTask(label);
+  }, [onAddTask, label]);
 
   return (
     <div className="flex flex-col h-full">
@@ -233,18 +238,18 @@ const ShelfQuadrant = ({ label, tasks, onBookClick, onComplete, flickeringId, sh
         <h3 className="text-sm font-bold" style={{ color: '#E8D5B7' }}>{label}</h3>
         <span className="text-xs" style={{ color: 'rgba(232,213,183,0.6)' }}>{tasks.length}</span>
       </div>
-      <div className="flex-1 relative">
-        <div className="custom-scrollbar overflow-x-auto h-full">
-          <div className="flex items-stretch h-[calc(100%-20px)] px-2 pt-2">
+      <div className="flex-1 relative cursor-pointer" onClick={handleShelfClick} title="Click to add a task">
+        <div className="custom-scrollbar overflow-x-auto h-full" onClick={handleShelfClick}>
+          <div className="flex items-stretch h-[calc(100%-20px)] px-2 pt-2" onClick={handleShelfClick}>
             <AnimatePresence mode="popLayout">
               {tasks.map((task) => (
                 <BookSpine key={task.id} task={task} onClick={() => onBookClick(task)} onComplete={onComplete} isFlickering={flickeringId === task.id} shelfColors={colors} />
               ))}
             </AnimatePresence>
-            <PlaceholderBooks count={Math.max(2, 6 - tasks.length)} />
+            <PlaceholderBooks count={Math.max(2, 6 - tasks.length)} onClick={() => onAddTask && onAddTask(label)} />
           </div>
         </div>
-        <div className="shelf absolute bottom-0 left-1 right-1 h-5 rounded-b-sm" />
+        <div className="shelf absolute bottom-0 left-1 right-1 h-5 rounded-b-sm" onClick={() => onAddTask && onAddTask(label)} />
       </div>
     </div>
   );
@@ -282,26 +287,34 @@ const Bookshelf3D = ({ categories, tasksByLabel, onBookClick }) => {
     return tex;
   }, []);
 
-  /* Book spine texture */
+  /* Book spine texture — high-res canvas for crisp text */
   const createBookTexture = useCallback((color, title, w, h) => {
+    const scale = 4;
+    const cw = w * scale, ch = h * scale;
     const c = document.createElement('canvas');
-    c.width = w; c.height = h;
+    c.width = cw; c.height = ch;
     const ctx = c.getContext('2d');
-    ctx.fillStyle = color; ctx.fillRect(0, 0, w, h);
-    for (let y = 0; y < h; y += 2) for (let x = 0; x < w; x += 2)
-      if (Math.random() > 0.7) { ctx.fillStyle = `rgba(0,0,0,${Math.random() * 0.08})`; ctx.fillRect(x, y, 1, 1); }
-    ctx.strokeStyle = 'rgba(218,165,32,0.6)'; ctx.lineWidth = 1.5;
-    [[8, 20, w - 8], [10, 24, w - 10], [8, h - 30, w - 8], [10, h - 26, w - 10]].forEach(([x1, y1, x2]) => {
+    ctx.fillStyle = color; ctx.fillRect(0, 0, cw, ch);
+    for (let y = 0; y < ch; y += 4) for (let x = 0; x < cw; x += 4)
+      if (Math.random() > 0.7) { ctx.fillStyle = `rgba(0,0,0,${Math.random() * 0.06})`; ctx.fillRect(x, y, 2, 2); }
+    ctx.strokeStyle = 'rgba(218,165,32,0.6)'; ctx.lineWidth = 2 * scale;
+    const gx = 8 * scale, gx2 = 10 * scale;
+    [[gx, 20 * scale, cw - gx], [gx2, 24 * scale, cw - gx2], [gx, ch - 30 * scale, cw - gx], [gx2, ch - 26 * scale, cw - gx2]].forEach(([x1, y1, x2]) => {
       ctx.beginPath(); ctx.moveTo(x1, y1); ctx.lineTo(x2, y1); ctx.stroke();
     });
-    ctx.save(); ctx.translate(w / 2, h / 2);
-    ctx.fillStyle = 'rgba(255,255,255,0.9)';
-    ctx.font = `bold ${Math.min(12, w - 6)}px Inter, sans-serif`;
+    ctx.save(); ctx.translate(cw / 2, ch / 2);
+    ctx.fillStyle = 'rgba(255,255,255,0.95)';
+    const fontSize = Math.min(22, (w - 4)) * scale;
+    ctx.font = `bold ${fontSize}px Inter, sans-serif`;
     ctx.textAlign = 'center'; ctx.textBaseline = 'middle';
     let dt = title;
-    while (ctx.measureText(dt).width > h - 60 && dt.length > 3) dt = dt.slice(0, -2) + '\u2026';
+    while (ctx.measureText(dt).width > (ch - 80 * scale) && dt.length > 3) dt = dt.slice(0, -2) + '\u2026';
     ctx.rotate(-Math.PI / 2); ctx.fillText(dt, 0, 0); ctx.restore();
-    return new THREE.CanvasTexture(c);
+    const tex = new THREE.CanvasTexture(c);
+    tex.minFilter = THREE.LinearFilter;
+    tex.magFilter = THREE.LinearFilter;
+    tex.anisotropy = 4;
+    return tex;
   }, []);
 
   /* Ghost book texture */
@@ -726,8 +739,8 @@ const TaskDetailModal = ({ task, onClose, onComplete, onDelete, onEdit, categori
 };
 
 /* ── Add Task Modal ── */
-const AddTaskModal = ({ onClose, onAdd, categories }) => {
-  const [formData, setFormData] = useState({ name: '', label: categories[0]?.name || '', description: '', dueDate: '', timeframe: 'medium' });
+const AddTaskModal = ({ onClose, onAdd, categories, preSelectedLabel }) => {
+  const [formData, setFormData] = useState({ name: '', label: preSelectedLabel || categories[0]?.name || '', description: '', dueDate: '', timeframe: 'medium' });
   const handleSubmit = (e) => { e.preventDefault(); if (formData.name.trim()) { onAdd({ ...formData, id: Date.now().toString(), completed: false, createdAt: new Date().toISOString() }); onClose(); } };
 
   return (
@@ -1033,7 +1046,7 @@ const App = () => {
   const [categories, setCategories] = useLocalStorage('artisan-todo-categories', DEFAULT_CATEGORIES);
   const [onboarded, setOnboarded] = useLocalStorage('artisan-todo-onboarded', false);
   const [activeView, setActiveView] = useState('library');
-  const [showAddModal, setShowAddModal] = useState(false);
+  const [showAddModal, setShowAddModal] = useState(null); // null = closed, string = pre-selected label, true = no pre-selection
   const [showCategoryManager, setShowCategoryManager] = useState(false);
   const [selectedTask, setSelectedTask] = useState(null);
   const [flickeringId, setFlickeringId] = useState(null);
@@ -1076,6 +1089,7 @@ const App = () => {
     setTasks(prev => prev.map(t => t.id === taskId ? { ...t, ...updates } : t));
   }, [setTasks]);
   const goToLibrary = useCallback(() => setActiveView('library'), []);
+  const handleShelfAddTask = useCallback((label) => setShowAddModal(label), []);
 
   // Grid layout based on category count
   const catCount = categories.length;
@@ -1121,7 +1135,7 @@ const App = () => {
               <button onClick={() => setActiveView('library')} className={`px-3 py-1.5 rounded-full text-xs font-semibold flex items-center gap-1 transition-all ${activeView === 'library' ? 'bg-artisan-purple text-white' : 'text-gray-500 hover:text-gray-700'}`}><Icons.Book />Library</button>
               <button onClick={() => setActiveView('archive')} className={`px-3 py-1.5 rounded-full text-xs font-semibold flex items-center gap-1 transition-all ${activeView === 'archive' ? 'bg-artisan-purple text-white' : 'text-gray-500 hover:text-gray-700'}`}><Icons.Archive />{archivedTasks.length}</button>
             </div>
-            <motion.button onClick={() => setShowAddModal(true)} className="w-9 h-9 rounded-full bg-artisan-purple text-white flex items-center justify-center shadow-lg shadow-purple-300/50" whileHover={{ scale: 1.1 }} whileTap={{ scale: 0.9 }}><Icons.Plus /></motion.button>
+            <motion.button onClick={() => setShowAddModal('__open__')} className="w-9 h-9 rounded-full bg-artisan-purple text-white flex items-center justify-center shadow-lg shadow-purple-300/50" whileHover={{ scale: 1.1 }} whileTap={{ scale: 0.9 }}><Icons.Plus /></motion.button>
           </div>
         </div>
       </header>
@@ -1134,14 +1148,22 @@ const App = () => {
                 <Bookshelf3D categories={categories} tasksByLabel={tasksByLabel} onBookClick={setSelectedTask} />
               </motion.div>
             ) : (
-              <motion.div key="library" className={needsScroll ? 'h-full overflow-y-auto custom-scrollbar' : 'h-full'} initial={{ opacity: 0 }} animate={{ opacity: 1 }} exit={{ opacity: 0 }}>
+              <motion.div key="library" className={needsScroll ? 'h-full overflow-y-auto custom-scrollbar relative' : 'h-full relative'} initial={{ opacity: 0 }} animate={{ opacity: 1 }} exit={{ opacity: 0 }}>
                 <div style={gridStyle}>
                   {categories.map((cat) => (
                     <div key={cat.name} className="shelf-quadrant rounded-xl p-2 overflow-hidden" style={needsScroll ? { minHeight: '200px' } : {}}>
-                      <ShelfQuadrant label={cat.name} tasks={tasksByLabel[cat.name] || []} onBookClick={setSelectedTask} onComplete={handleComplete} flickeringId={flickeringId} shelfColors={cat} />
+                      <ShelfQuadrant label={cat.name} tasks={tasksByLabel[cat.name] || []} onBookClick={setSelectedTask} onComplete={handleComplete} flickeringId={flickeringId} shelfColors={cat} onAddTask={handleShelfAddTask} />
                     </div>
                   ))}
                 </div>
+                {/* 3D View tag */}
+                <button
+                  onClick={() => setView3D(true)}
+                  className="absolute bottom-3 right-3 inline-flex items-center gap-1.5 px-3 py-1.5 rounded-full bg-white/80 backdrop-blur-sm text-artisan-purple text-xs font-semibold border border-purple-200/50 shadow-sm hover:bg-artisan-purple hover:text-white hover:border-artisan-purple transition-all cursor-pointer"
+                >
+                  <Icons.Cube3D />
+                  3D View
+                </button>
               </motion.div>
             )
           ) : activeView === 'why' ? (
@@ -1158,7 +1180,7 @@ const App = () => {
 
       <AnimatePresence>
         {!onboarded && <OnboardingModal onFinish={handleOnboardingFinish} />}
-        {showAddModal && <AddTaskModal onClose={() => setShowAddModal(false)} onAdd={handleAddTask} categories={categories} />}
+        {showAddModal && <AddTaskModal onClose={() => setShowAddModal(null)} onAdd={handleAddTask} categories={categories} preSelectedLabel={showAddModal !== '__open__' ? showAddModal : null} />}
         {selectedTask && <TaskDetailModal task={selectedTask} onClose={() => setSelectedTask(null)} onComplete={handleComplete} onDelete={handleDelete} onEdit={handleEditTask} categories={categories} />}
         {showCategoryManager && <CategoryManagerModal onClose={() => setShowCategoryManager(false)} categories={categories} onSave={setCategories} />}
       </AnimatePresence>

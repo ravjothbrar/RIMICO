@@ -91,6 +91,11 @@ const Icons = {
       <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={1.5} d="M15.232 5.232l3.536 3.536m-2.036-5.036a2.5 2.5 0 113.536 3.536L6.5 21.036H3v-3.572L16.732 3.732z" />
     </svg>
   ),
+  Question: () => (
+    <svg className="w-3.5 h-3.5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+      <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M8.228 9c.549-1.165 2.03-2 3.772-2 2.21 0 4 1.343 4 3 0 1.4-1.278 2.575-3.006 2.907-.542.104-.994.54-.994 1.093m0 3h.01M21 12a9 9 0 11-18 0 9 9 0 0118 0z" />
+    </svg>
+  ),
   Quote: () => (
     <svg className="w-4 h-4" viewBox="0 0 24 24" fill="currentColor">
       <path d="M6 17h3l2-4V7H5v6h3zm8 0h3l2-4V7h-6v6h3z" />
@@ -298,6 +303,23 @@ const Toolbar = React.memo(({ editorElRef, font, onFontChange }) => {
     document.execCommand(cmd, false, value || null);
   }, [editorElRef]);
 
+  const toggleBlockquote = useCallback(() => {
+    const el = editorElRef.current;
+    if (!el) return;
+    el.focus();
+    const sel = window.getSelection();
+    if (!sel || sel.rangeCount === 0) return;
+    let node = sel.anchorNode;
+    while (node && node !== el) {
+      if (node.nodeType === 1 && node.tagName === 'BLOCKQUOTE') {
+        document.execCommand('formatBlock', false, '<p>');
+        return;
+      }
+      node = node.parentNode;
+    }
+    document.execCommand('formatBlock', false, '<blockquote>');
+  }, [editorElRef]);
+
   return (
     <div className="flex items-center gap-1 px-4 py-2 bg-white/50 backdrop-blur-sm border-b border-purple-100/40 flex-shrink-0">
       <button onClick={() => execCmd('bold')} className="toolbar-btn" title="Bold (Ctrl+B)"><Icons.Bold /></button>
@@ -314,7 +336,7 @@ const Toolbar = React.memo(({ editorElRef, font, onFontChange }) => {
 
       <button onClick={() => execCmd('insertUnorderedList')} className="toolbar-btn" title="Bullet List"><Icons.BulletList /></button>
       <button onClick={() => execCmd('insertOrderedList')} className="toolbar-btn" title="Numbered List"><Icons.NumberedList /></button>
-      <button onClick={() => execCmd('formatBlock', '<blockquote>')} className="toolbar-btn" title="Quote"><Icons.Quote /></button>
+      <button onClick={toggleBlockquote} className="toolbar-btn" title="Quote"><Icons.Quote /></button>
 
       <div className="w-px h-5 bg-purple-200/40 mx-0.5" />
 
@@ -368,6 +390,82 @@ const EmptyState = ({ onNew }) => (
   </div>
 );
 
+/* ── Why Page ── */
+const WhyPage = () => (
+  <div className="h-full overflow-auto custom-scrollbar">
+    <div className="max-w-lg mx-auto py-8 px-6">
+      {/* Header */}
+      <div className="text-center mb-8">
+        <div className="w-14 h-14 rounded-2xl bg-gradient-to-br from-artisan-purple/20 to-artisan-purpleDark/10 flex items-center justify-center mx-auto mb-3">
+          <Icons.Pen />
+        </div>
+        <h2 className="text-2xl font-extrabold text-artisan-purple mb-1">Why Inkwell?</h2>
+        <p className="text-xs text-gray-400 uppercase tracking-widest">The story behind the pen</p>
+      </div>
+
+      {/* Content */}
+      <div className="bg-white/80 rounded-xl border border-purple-100 shadow-sm p-6 space-y-5">
+
+        <div>
+          <h3 className="text-sm font-bold text-artisan-purple mb-2 uppercase tracking-wider">The Problem</h3>
+          <p className="text-sm text-gray-700 leading-relaxed">
+            I used to draft things everywhere &mdash; half-finished thoughts in Notepad, bullet points in Google Keep, scribbles on random sheets of paper, WhatsApp messages to myself, and even scheduled emails as reminders of ideas I didn't want to lose. It was scattered, messy, and I could never tell whether something was meant to become a blog post, a LinkedIn article, a poem, or just a passing thought.
+          </p>
+        </div>
+
+        <div className="h-px bg-gradient-to-r from-transparent via-purple-200 to-transparent" />
+
+        <div>
+          <h3 className="text-sm font-bold text-artisan-purple mb-2 uppercase tracking-wider">The Idea</h3>
+          <p className="text-sm text-gray-700 leading-relaxed">
+            I wanted a single, unified place to write &mdash; something easy, intuitive, and aesthetically appealing. Not a full-blown document editor, not a note-taking app buried in features. Just a clean surface where I could sit down, draft something, and know it would be there when I came back. <strong className="text-artisan-purple">Inkwell</strong> was born from that need.
+          </p>
+        </div>
+
+        <div className="h-px bg-gradient-to-r from-transparent via-purple-200 to-transparent" />
+
+        <div>
+          <h3 className="text-sm font-bold text-artisan-purple mb-2 uppercase tracking-wider">How It Works</h3>
+          <div className="space-y-3">
+            <div className="flex gap-3 items-start">
+              <div className="w-6 h-6 rounded-full bg-purple-100 text-artisan-purple flex items-center justify-center flex-shrink-0 text-xs font-bold mt-0.5">1</div>
+              <p className="text-sm text-gray-700 leading-relaxed">Your notes live in the <strong>sidebar</strong>, titled and sorted by when you last touched them &mdash; always one click away.</p>
+            </div>
+            <div className="flex gap-3 items-start">
+              <div className="w-6 h-6 rounded-full bg-purple-100 text-artisan-purple flex items-center justify-center flex-shrink-0 text-xs font-bold mt-0.5">2</div>
+              <p className="text-sm text-gray-700 leading-relaxed">Everything <strong>auto-saves</strong> to your browser &mdash; no buttons, no cloud, no friction. Just write and it's there.</p>
+            </div>
+            <div className="flex gap-3 items-start">
+              <div className="w-6 h-6 rounded-full bg-purple-100 text-artisan-purple flex items-center justify-center flex-shrink-0 text-xs font-bold mt-0.5">3</div>
+              <p className="text-sm text-gray-700 leading-relaxed">Full <strong>rich text formatting</strong> &mdash; bold, italics, headings, bullet points, blockquotes &mdash; with your choice of font, so every draft feels right.</p>
+            </div>
+          </div>
+        </div>
+
+        <div className="h-px bg-gradient-to-r from-transparent via-purple-200 to-transparent" />
+
+        <div>
+          <h3 className="text-sm font-bold text-artisan-purple mb-2 uppercase tracking-wider">Beyond a Simple Tool</h3>
+          <p className="text-sm text-gray-700 leading-relaxed">
+            Whether it's a blog post, a LinkedIn article, a poem, or just a thought I need to get out of my head &mdash; Inkwell is where it starts. Export to <code className="px-1.5 py-0.5 bg-purple-50 text-artisan-purple rounded text-xs font-mono">.md</code>, copy to clipboard, or simply leave it here for later. No noise, no distractions &mdash; just you and the words.
+          </p>
+        </div>
+
+        <div className="h-px bg-gradient-to-r from-transparent via-purple-200 to-transparent" />
+
+        <p className="text-sm text-gray-600 leading-relaxed italic text-center pt-1">
+          I hope <strong className="text-artisan-purple not-italic">Inkwell</strong> gives you the same peace of mind it gives me.
+        </p>
+      </div>
+
+      {/* Signature */}
+      <div className="text-center mt-6">
+        <p className="text-xs text-gray-400">&mdash; Ravjoth</p>
+      </div>
+    </div>
+  </div>
+);
+
 /* ── Main App ── */
 const App = () => {
   const [notes, setNotes] = useLocalStorage('inkwell-notes', []);
@@ -375,6 +473,7 @@ const App = () => {
   const [font, setFont] = useLocalStorage('inkwell-font', 'Aptos');
   const [toastMsg, setToastMsg] = useState(null);
   const [deleteTarget, setDeleteTarget] = useState(null);
+  const [activeView, setActiveView] = useState('editor');
 
   const editorElRef = useRef(null);
   const titleInputRef = useRef(null);
@@ -521,76 +620,87 @@ const App = () => {
             <a href="https://ravjothbrar.com" target="_blank" rel="noopener noreferrer" className="attribution-btn inline-flex items-center gap-1.5 px-3 py-1.5 rounded-full bg-white/90 text-gray-600 text-xs font-medium">
               <Icons.User /> Created by Ravjoth
             </a>
+            <button onClick={() => setActiveView(v => v === 'why' ? 'editor' : 'why')} className={`attribution-btn inline-flex items-center gap-1 px-2.5 py-1.5 rounded-full text-xs font-medium transition-colors ${activeView === 'why' ? 'bg-artisan-purple text-white border-artisan-purple' : 'bg-white/90 text-gray-600'}`}>
+              <Icons.Question />Why?
+            </button>
           </div>
           <div className="flex items-center gap-3">
             <a href="../" className="rimico-home-btn px-3.5 py-1.5 rounded-lg font-extrabold text-lg text-artisan-purple">
               RIMICO
             </a>
             <span className="text-artisan-purple/30 font-light text-lg select-none">/</span>
-            <span className="font-bold text-lg text-artisan-purple">Inkwell</span>
+            <span onClick={() => setActiveView('editor')} className="font-bold text-lg text-artisan-purple cursor-pointer hover:text-artisan-purpleDark transition-colors">Inkwell</span>
           </div>
-          <div className="w-[120px]" />
+          <div className="w-[160px]" />
         </div>
       </header>
 
       {/* ── Main content ── */}
       <main className="relative z-10 flex-1 flex overflow-hidden">
-        {/* Sidebar */}
-        <div className="w-64 flex-shrink-0">
-          <Sidebar
-            notes={sortedNotes}
-            activeId={activeNoteId}
-            onSelect={setActiveNoteId}
-            onNew={createNote}
-            onDelete={setDeleteTarget}
-            onExport={exportNote}
-            onCopy={copyNote}
-          />
-        </div>
+        {activeView === 'why' ? (
+          <div className="flex-1 bg-white/50 backdrop-blur-sm border border-white/60 rounded-xl m-2 overflow-hidden">
+            <WhyPage />
+          </div>
+        ) : (
+          <>
+            {/* Sidebar */}
+            <div className="w-64 flex-shrink-0">
+              <Sidebar
+                notes={sortedNotes}
+                activeId={activeNoteId}
+                onSelect={setActiveNoteId}
+                onNew={createNote}
+                onDelete={setDeleteTarget}
+                onExport={exportNote}
+                onCopy={copyNote}
+              />
+            </div>
 
-        {/* Editor area */}
-        <div className="flex-1 flex flex-col bg-white/40 backdrop-blur-sm min-w-0">
-          {activeNote ? (
-            <>
-              <Toolbar editorElRef={editorElRef} font={font} onFontChange={setFont} />
+            {/* Editor area */}
+            <div className="flex-1 flex flex-col bg-white/40 backdrop-blur-sm min-w-0">
+              {activeNote ? (
+                <>
+                  <Toolbar editorElRef={editorElRef} font={font} onFontChange={setFont} />
 
-              {/* Title */}
-              <div className="px-6 pt-5 pb-1 flex-shrink-0">
-                <input
-                  ref={titleInputRef}
-                  type="text"
-                  value={activeNote.title}
-                  onChange={(e) => updateTitle(e.target.value)}
-                  placeholder="Untitled"
-                  className="title-input w-full text-2xl font-extrabold text-gray-800"
-                  style={{ fontFamily }}
-                />
-                <div className="h-px bg-gradient-to-r from-purple-200/60 via-purple-200/30 to-transparent mt-3" />
-              </div>
-
-              {/* Editable content */}
-              <div className="flex-1 relative min-h-0">
-                {editorEmpty && (
-                  <div className="absolute top-3 left-6 text-gray-300 text-base pointer-events-none select-none" style={{ fontFamily }}>
-                    Start writing...
+                  {/* Title */}
+                  <div className="px-6 pt-5 pb-1 flex-shrink-0">
+                    <input
+                      ref={titleInputRef}
+                      type="text"
+                      value={activeNote.title}
+                      onChange={(e) => updateTitle(e.target.value)}
+                      placeholder="Untitled"
+                      className="title-input w-full text-2xl font-extrabold text-gray-800"
+                      style={{ fontFamily }}
+                    />
+                    <div className="h-px bg-gradient-to-r from-purple-200/60 via-purple-200/30 to-transparent mt-3" />
                   </div>
-                )}
-                <div
-                  ref={editorElRef}
-                  contentEditable
-                  suppressContentEditableWarning
-                  className="editor-content h-full px-6 py-3 overflow-y-auto text-gray-700 leading-relaxed custom-scrollbar"
-                  style={{ fontFamily, fontSize: '15px' }}
-                  onInput={onEditorInput}
-                />
-              </div>
 
-              <StatusBar content={activeNote.content} />
-            </>
-          ) : (
-            <EmptyState onNew={createNote} />
-          )}
-        </div>
+                  {/* Editable content */}
+                  <div className="flex-1 relative min-h-0">
+                    {editorEmpty && (
+                      <div className="absolute top-3 left-6 text-gray-300 text-base pointer-events-none select-none" style={{ fontFamily }}>
+                        Start writing...
+                      </div>
+                    )}
+                    <div
+                      ref={editorElRef}
+                      contentEditable
+                      suppressContentEditableWarning
+                      className="editor-content h-full px-6 py-3 overflow-y-auto text-gray-700 leading-relaxed custom-scrollbar"
+                      style={{ fontFamily, fontSize: '15px' }}
+                      onInput={onEditorInput}
+                    />
+                  </div>
+
+                  <StatusBar content={activeNote.content} />
+                </>
+              ) : (
+                <EmptyState onNew={createNote} />
+              )}
+            </div>
+          </>
+        )}
       </main>
 
       {/* ── Toast ── */}
