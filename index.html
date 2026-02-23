@@ -5,8 +5,8 @@
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
   <title>RIMICO | A Collection of Artisan Tools</title>
 
-  <!-- Favicon -->
-  <link rel="icon" href="data:image/svg+xml,<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 100 100'><text y='.9em' font-size='90'>📚</text></svg>">
+  <!-- Purple R Favicon -->
+  <link rel="icon" href="data:image/svg+xml,<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 100 100'><rect width='100' height='100' rx='18' fill='%237C3AED'/><text x='50' y='73' font-family='system-ui,sans-serif' font-size='68' font-weight='800' fill='white' text-anchor='middle'>R</text></svg>">
 
   <!-- Tailwind CSS -->
   <script src="https://cdn.tailwindcss.com"></script>
@@ -108,34 +108,37 @@
           </div>
         </a>
 
-        <!-- Card 2: Writing Tool (Coming Soon) -->
-        <div class="tool-card tool-card--soon group block">
+        <!-- Card 2: Inkwell -->
+        <a href="./inkwell/" class="tool-card group block">
           <div class="tool-card-inner p-8 flex flex-col items-center text-center h-full">
             <!-- Icon -->
-            <div class="w-16 h-16 rounded-2xl bg-gradient-to-br from-gray-200/60 to-gray-300/30 flex items-center justify-center mb-5">
-              <svg class="w-8 h-8 text-gray-400" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+            <div class="w-16 h-16 rounded-2xl bg-gradient-to-br from-artisan-purple/20 to-artisan-purpleDark/10 flex items-center justify-center mb-5 group-hover:scale-110 transition-transform duration-300">
+              <svg class="w-8 h-8 text-artisan-purple" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                 <path stroke-linecap="round" stroke-linejoin="round" stroke-width="1.5" d="M15.232 5.232l3.536 3.536m-2.036-5.036a2.5 2.5 0 113.536 3.536L6.5 21.036H3v-3.572L16.732 3.732z" />
               </svg>
             </div>
 
             <!-- Title -->
-            <h2 class="text-xl font-bold text-gray-400 mb-2">
-              Writing Tool
+            <h2 class="text-xl font-bold text-gray-800 mb-2 group-hover:text-artisan-purpleDark transition-colors">
+              Inkwell
             </h2>
 
             <!-- Description -->
-            <p class="text-sm text-gray-400 leading-relaxed mb-5">
-              A distraction-free writing companion designed for readers who love to write.
+            <p class="text-sm text-gray-500 leading-relaxed mb-5">
+              A distraction-free writing companion for drafting blog posts, notes, and creative pieces.
             </p>
 
-            <!-- Coming Soon Badge -->
+            <!-- CTA -->
             <div class="mt-auto">
-              <span class="coming-soon-badge">
-                Coming Soon
+              <span class="inline-flex items-center gap-1.5 text-sm font-medium text-artisan-purple group-hover:text-artisan-purpleDark transition-colors">
+                Open
+                <svg class="w-4 h-4 group-hover:translate-x-1 transition-transform" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                  <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 5l7 7-7 7" />
+                </svg>
               </span>
             </div>
           </div>
-        </div>
+        </a>
 
       </div>
 
