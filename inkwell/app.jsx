@@ -230,8 +230,8 @@ const NoteItem = React.memo(({ note, isActive, onSelect, onDelete, onExport, onC
     >
       <div className="flex items-start justify-between gap-2">
         <div className="flex-1 min-w-0">
-          <h4 className={`text-sm font-semibold truncate ${isActive ? 'text-artisan-purpleDark' : 'text-gray-700'}`}>
-            {note.title || 'Untitled'}
+          <h4 className={`text-sm font-semibold ${isActive ? 'text-artisan-purpleDark' : 'text-gray-700'}`}>
+            {(() => { const t = note.title || 'Untitled'; return t.length > 37 ? t.slice(0, 37) + '...' : t; })()}
           </h4>
           <p className="text-xs text-gray-400 truncate mt-0.5">{preview || 'Empty note'}</p>
           <p className="text-[10px] text-gray-300 mt-1">{dateStr}</p>
@@ -644,7 +644,7 @@ const App = () => {
         ) : (
           <>
             {/* Sidebar */}
-            <div className="w-64 flex-shrink-0">
+            <div className="flex-shrink-0" style={{width: '307px'}}>
               <Sidebar
                 notes={sortedNotes}
                 activeId={activeNoteId}
