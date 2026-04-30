@@ -1,6 +1,6 @@
 const { useState, useEffect, useRef, useCallback, useMemo } = React;
 
-/* ── LocalStorage hook (stable setValue via functional updater) ── */
+/* ── LocalStorage hook ── */
 const useLocalStorage = (key, initialValue) => {
   const [storedValue, setStoredValue] = useState(() => {
     try {
@@ -8,7 +8,6 @@ const useLocalStorage = (key, initialValue) => {
       return raw ? JSON.parse(raw) : initialValue;
     } catch (e) { return initialValue; }
   });
-
   const setValue = useCallback((value) => {
     setStoredValue(prev => {
       const v = typeof value === 'function' ? value(prev) : value;
@@ -16,42 +15,45 @@ const useLocalStorage = (key, initialValue) => {
       return v;
     });
   }, [key]);
-
   return [storedValue, setValue];
 };
 
 const genId = () => `${Date.now().toString(36)}-${Math.random().toString(36).slice(2, 7)}`;
+const makeBlankItem = (listId) => ({
+  id: genId(), text: '', bold: false, underline: false,
+  depth: 0, listId, completed: false, completedAt: null,
+});
 
 const DEFAULT_LIST_ID = 'default';
 const DEFAULT_LISTS   = [{ id: DEFAULT_LIST_ID, name: 'Tasks' }];
 
 /* ── Icons ── */
 const CheckIcon = () => (
-  <svg width="8" height="8" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="3.5"
+  <svg width="9" height="9" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="3.5"
     strokeLinecap="round" strokeLinejoin="round">
     <polyline points="20 6 9 17 4 12" />
   </svg>
 );
 const PlusIcon = () => (
-  <svg width="11" height="11" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5"
+  <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5"
     strokeLinecap="round">
     <line x1="12" y1="5" x2="12" y2="19" /><line x1="5" y1="12" x2="19" y2="12" />
   </svg>
 );
 const UndoIcon = () => (
-  <svg width="11" height="11" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2"
+  <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2"
     strokeLinecap="round" strokeLinejoin="round">
     <polyline points="9 14 4 9 9 4" /><path d="M20 20v-7a4 4 0 0 0-4-4H4" />
   </svg>
 );
 const UserIcon = () => (
-  <svg width="11" height="11" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2"
+  <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2"
     strokeLinecap="round" strokeLinejoin="round">
     <path d="M20 21v-2a4 4 0 0 0-4-4H8a4 4 0 0 0-4 4v2" /><circle cx="12" cy="7" r="4" />
   </svg>
 );
 const TrashIcon = () => (
-  <svg width="11" height="11" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2"
+  <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2"
     strokeLinecap="round" strokeLinejoin="round">
     <polyline points="3 6 5 6 21 6" />
     <path d="M19 6l-1 14a2 2 0 0 1-2 2H8a2 2 0 0 1-2-2L5 6" />
@@ -77,18 +79,15 @@ const BulletItem = React.memo(function BulletItem({
   const handleCheck   = useCallback(() => onToggleComplete(itemId),               [itemId, onToggleComplete]);
 
   return (
-    <div className="bullet-row" style={{ paddingLeft: `${depth * 28 + 6}px` }}>
-      {/* Vertical indent guides */}
+    <div className="bullet-row" style={{ paddingLeft: `${depth * 32 + 8}px` }}>
       {depth > 0 && Array.from({ length: depth }).map((_, i) => (
-        <div key={i} className="indent-guide" style={{ left: `${i * 28 + 19}px` }} />
+        <div key={i} className="indent-guide" style={{ left: `${i * 32 + 22}px` }} />
       ))}
 
-      {/* Checkbox */}
       <button className="checkbox" onClick={handleCheck} type="button" aria-label="Complete task">
-        <span className="checkbox-pip" />
+        <span className="checkbox-inner" />
       </button>
 
-      {/* Editable text */}
       <input
         ref={inputRef}
         type="text"
@@ -102,54 +101,134 @@ const BulletItem = React.memo(function BulletItem({
         style={{
           fontWeight: bold ? 700 : 400,
           textDecoration: underline ? 'underline' : 'none',
-          textDecorationColor: 'rgba(45,212,191,0.55)',
+          textDecorationColor: 'rgba(167,139,250,0.55)',
         }}
       />
     </div>
   );
 });
 
-/* ── Completed sidebar ── */
-const CompletedSidebar = React.memo(function CompletedSidebar({ items, onRestore, onClear }) {
+/* ── ListSection ── */
+const ListSection = React.memo(function ListSection({
+  list, items, showDelete,
+  onRename, onDelete, onAddItem,
+  onTextChange, onKeyDown, onToggleComplete, setRef,
+}) {
+  const [editing, setEditing] = useState(false);
+  const [nameVal, setNameVal] = useState(list.name);
+  const nameInputRef = useRef(null);
+
+  useEffect(() => { setNameVal(list.name); }, [list.name]);
+  useEffect(() => {
+    if (editing && nameInputRef.current) nameInputRef.current.select();
+  }, [editing]);
+
+  const submitRename = useCallback(() => {
+    const t = nameVal.trim();
+    if (t) onRename(list.id, t);
+    else   setNameVal(list.name);
+    setEditing(false);
+  }, [nameVal, list.id, list.name, onRename]);
+
   return (
-    <aside className="completed-sidebar">
-      <div className="completed-header">
-        <span className="completed-title">
-          Done{items.length > 0 ? ` · ${items.length}` : ''}
-        </span>
-        {items.length > 0 && (
-          <button className="clear-btn" onClick={onClear} title="Clear all completed">
-            Clear
+    <section className="list-section">
+      <div className="list-header group">
+        {editing ? (
+          <input
+            ref={nameInputRef}
+            className="list-name-input"
+            value={nameVal}
+            onChange={e => setNameVal(e.target.value)}
+            onBlur={submitRename}
+            onKeyDown={e => {
+              if (e.key === 'Enter')  submitRename();
+              if (e.key === 'Escape') { setNameVal(list.name); setEditing(false); }
+            }}
+          />
+        ) : (
+          <h2
+            className="list-name"
+            onClick={() => setEditing(true)}
+            title="Click to rename"
+          >
+            {list.name}
+          </h2>
+        )}
+        {showDelete && !editing && (
+          <button
+            className="list-delete-btn"
+            onClick={() => onDelete(list.id)}
+            title="Delete list"
+          >
+            <TrashIcon />
           </button>
         )}
       </div>
 
-      <div className="completed-list custom-scrollbar">
-        {items.length === 0 ? (
-          <p className="empty-msg">Nothing yet</p>
-        ) : (
-          [...items].reverse().map(item => (
-            <div key={item.id} className="completed-item">
-              <div className="completed-check">
-                <CheckIcon />
+      <div className="list-items">
+        {items.map(item => (
+          <BulletItem
+            key={item.id}
+            itemId={item.id}
+            text={item.text}
+            bold={item.bold}
+            underline={item.underline}
+            depth={item.depth}
+            onTextChange={onTextChange}
+            onKeyDown={onKeyDown}
+            onToggleComplete={onToggleComplete}
+            setRef={setRef}
+          />
+        ))}
+      </div>
+
+      <button className="add-item-btn" onClick={() => onAddItem(list.id)}>
+        <PlusIcon />
+        <span>Add item</span>
+      </button>
+    </section>
+  );
+});
+
+/* ── Completed sidebar ── */
+const CompletedSidebar = React.memo(function CompletedSidebar({ open, items, onRestore, onClear }) {
+  return (
+    <aside className={`completed-sidebar${open ? ' open' : ''}`}>
+      <div className="completed-inner">
+        <div className="completed-header">
+          <span className="completed-title">
+            Completed{items.length > 0 ? ` · ${items.length}` : ''}
+          </span>
+          {items.length > 0 && (
+            <button className="clear-btn" onClick={onClear}>Clear all</button>
+          )}
+        </div>
+
+        <div className="completed-list custom-scrollbar">
+          {items.length === 0 ? (
+            <p className="empty-msg">Nothing here yet</p>
+          ) : (
+            [...items].reverse().map(item => (
+              <div key={item.id} className="completed-item">
+                <div className="completed-check"><CheckIcon /></div>
+                <span
+                  className="completed-text"
+                  style={{ fontWeight: item.bold ? 700 : 400 }}
+                  title={item.text || ''}
+                >
+                  {item.text || <em>empty</em>}
+                </span>
+                <button
+                  className="restore-btn"
+                  onClick={() => onRestore(item.id)}
+                  title="Restore"
+                >
+                  <UndoIcon />
+                </button>
               </div>
-              <span
-                className="completed-text"
-                style={{ fontWeight: item.bold ? 700 : 400 }}
-                title={item.text || ''}
-              >
-                {item.text || <em>empty</em>}
-              </span>
-              <button
-                className="restore-btn"
-                onClick={() => onRestore(item.id)}
-                title="Restore"
-              >
-                <UndoIcon />
-              </button>
-            </div>
-          ))
-        )}
+            ))
+          )}
+        </div>
       </div>
     </aside>
   );
@@ -159,24 +238,13 @@ const CompletedSidebar = React.memo(function CompletedSidebar({ items, onRestore
 const App = () => {
   const [lists, setLists] = useLocalStorage('rimico-tasks-lists', DEFAULT_LISTS);
   const [items, setItems] = useLocalStorage('rimico-tasks-items', []);
+  const [completedOpen, setCompletedOpen] = useState(false);
 
-  const [activeListId, setActiveListId] = useState(() => {
-    try {
-      const stored = JSON.parse(window.localStorage.getItem('rimico-tasks-lists') || '[]');
-      return stored[0]?.id || DEFAULT_LIST_ID;
-    } catch (e) { return DEFAULT_LIST_ID; }
-  });
-
-  const [renamingId,   setRenamingId]   = useState(null);
-  const [renameValue,  setRenameValue]  = useState('');
-  const renameInputRef = useRef(null);
-
-  /* Stable refs to avoid stale closures in event handlers */
-  const refsMap         = useRef({});
-  const itemsRef        = useRef(items);
-  const activeListIdRef = useRef(activeListId);
-  useEffect(() => { itemsRef.current        = items;        }, [items]);
-  useEffect(() => { activeListIdRef.current = activeListId; }, [activeListId]);
+  const refsMap  = useRef({});
+  const itemsRef = useRef(items);
+  const listsRef = useRef(lists);
+  useEffect(() => { itemsRef.current = items; }, [items]);
+  useEffect(() => { listsRef.current = lists; }, [lists]);
 
   const setRef = useCallback((id, el) => {
     if (el) refsMap.current[id] = el;
@@ -192,32 +260,32 @@ const App = () => {
     }, 0);
   }, []);
 
-  /* Derived data */
-  const activeItems = useMemo(
-    () => items.filter(i => i.listId === activeListId && !i.completed),
-    [items, activeListId]
-  );
-  const completedItems = useMemo(
-    () => items.filter(i => i.completed),
-    [items]
-  );
-
-  /* Ensure at least one blank item exists in active list */
+  /* On mount: ensure every existing list has at least one blank item */
   useEffect(() => {
     setItems(prev => {
-      const has = prev.some(i => i.listId === activeListId && !i.completed);
-      if (has) return prev;
-      return [...prev, {
-        id: genId(), text: '', bold: false, underline: false,
-        depth: 0, listId: activeListId, completed: false, completedAt: null,
-      }];
+      const updated = [...prev];
+      let changed = false;
+      listsRef.current.forEach(list => {
+        if (!updated.some(i => i.listId === list.id && !i.completed)) {
+          updated.push(makeBlankItem(list.id));
+          changed = true;
+        }
+      });
+      return changed ? updated : prev;
     });
-  }, [activeListId, setItems]);
+  }, [setItems]); // stable dep — runs once
 
-  /* Auto-focus rename input when it appears */
-  useEffect(() => {
-    if (renamingId && renameInputRef.current) renameInputRef.current.select();
-  }, [renamingId]);
+  /* Derived */
+  const completedItems = useMemo(() => items.filter(i => i.completed), [items]);
+
+  const itemsByList = useMemo(() => {
+    const map = {};
+    lists.forEach(l => { map[l.id] = []; });
+    items.forEach(item => {
+      if (!item.completed && map[item.listId]) map[item.listId].push(item);
+    });
+    return map;
+  }, [lists, items]);
 
   /* ── Handlers ── */
   const handleTextChange = useCallback((id, text) => {
@@ -226,18 +294,16 @@ const App = () => {
 
   const handleKeyDown = useCallback((e, itemId) => {
     const allItems = itemsRef.current;
-    const listId   = activeListIdRef.current;
+    const item     = allItems.find(i => i.id === itemId);
+    if (!item) return;
+    const { listId } = item;
     const actives  = allItems.filter(i => i.listId === listId && !i.completed);
     const idx      = actives.findIndex(i => i.id === itemId);
     if (idx === -1) return;
-    const item = actives[idx];
 
     if (e.key === 'Enter') {
       e.preventDefault();
-      const newItem = {
-        id: genId(), text: '', bold: false, underline: false,
-        depth: item.depth, listId, completed: false, completedAt: null,
-      };
+      const newItem = { ...makeBlankItem(listId), depth: item.depth };
       setItems(prev => {
         const gi   = prev.findIndex(i => i.id === itemId);
         const next = [...prev];
@@ -284,23 +350,18 @@ const App = () => {
     }
 
     if (e.key === 'ArrowUp' && idx > 0) {
-      e.preventDefault();
-      focusItem(actives[idx - 1].id);
-      return;
+      e.preventDefault(); focusItem(actives[idx - 1].id); return;
     }
-
     if (e.key === 'ArrowDown' && idx < actives.length - 1) {
-      e.preventDefault();
-      focusItem(actives[idx + 1].id);
-      return;
+      e.preventDefault(); focusItem(actives[idx + 1].id); return;
     }
   }, [setItems, focusItem]);
 
   const handleToggleComplete = useCallback((itemId) => {
-    const actives = itemsRef.current.filter(
-      i => i.listId === activeListIdRef.current && !i.completed
-    );
-    const idx = actives.findIndex(i => i.id === itemId);
+    const item = itemsRef.current.find(i => i.id === itemId);
+    if (!item) return;
+    const actives = itemsRef.current.filter(i => i.listId === item.listId && !i.completed);
+    const idx     = actives.findIndex(i => i.id === itemId);
     setItems(prev => prev.map(i =>
       i.id === itemId ? { ...i, completed: true, completedAt: new Date().toISOString() } : i
     ));
@@ -318,46 +379,27 @@ const App = () => {
     setItems(prev => prev.filter(i => !i.completed));
   }, [setItems]);
 
-  const handleAddItem = useCallback(() => {
-    const listId = activeListIdRef.current;
-    const newItem = {
-      id: genId(), text: '', bold: false, underline: false,
-      depth: 0, listId, completed: false, completedAt: null,
-    };
+  const handleAddItem = useCallback((listId) => {
+    const newItem = makeBlankItem(listId);
     setItems(prev => [...prev, newItem]);
     focusItem(newItem.id);
   }, [setItems, focusItem]);
 
-  /* List management */
   const handleAddList = useCallback(() => {
-    const newList = { id: genId(), name: 'New list' };
-    setLists(prev => [...prev, newList]);
-    setActiveListId(newList.id);
-    setRenamingId(newList.id);
-    setRenameValue('New list');
+    const newListId = genId();
+    const newItem   = makeBlankItem(newListId);
+    setLists(prev => [...prev, { id: newListId, name: 'New list' }]);
+    setItems(prev => [...prev, newItem]);
+  }, [setLists, setItems]);
+
+  const handleRenameList = useCallback((id, name) => {
+    setLists(prev => prev.map(l => l.id === id ? { ...l, name } : l));
   }, [setLists]);
 
-  const handleSelectList = useCallback((id) => setActiveListId(id), []);
-
-  const handleDoubleClickTab = useCallback((id, name) => {
-    setRenamingId(id);
-    setRenameValue(name);
-  }, []);
-
-  const handleRenameSubmit = useCallback(() => {
-    const trimmed = renameValue.trim();
-    if (trimmed && renamingId)
-      setLists(prev => prev.map(l => l.id === renamingId ? { ...l, name: trimmed } : l));
-    setRenamingId(null);
-  }, [renamingId, renameValue, setLists]);
-
-  const handleDeleteList = useCallback((e, id) => {
-    e.stopPropagation();
+  const handleDeleteList = useCallback((id) => {
     setLists(prev => {
       if (prev.length <= 1) return prev;
-      const next = prev.filter(l => l.id !== id);
-      if (activeListIdRef.current === id) setActiveListId(next[0].id);
-      return next;
+      return prev.filter(l => l.id !== id);
     });
     setItems(prev => prev.filter(i => i.listId !== id));
   }, [setLists, setItems]);
@@ -373,6 +415,13 @@ const App = () => {
           <span className="header-title">Tasks</span>
         </div>
         <div className="header-right">
+          <button
+            className={`done-toggle${completedOpen ? ' done-toggle-active' : ''}`}
+            onClick={() => setCompletedOpen(v => !v)}
+          >
+            <CheckIcon />
+            Done{completedItems.length > 0 ? ` · ${completedItems.length}` : ''}
+          </button>
           <a
             href="https://ravjothbrar.com"
             target="_blank"
@@ -388,96 +437,52 @@ const App = () => {
       {/* ── Body ── */}
       <div className="body">
 
-        {/* Main panel */}
-        <main className="main">
+        {/* Scrollable lists area */}
+        <main className="main custom-scrollbar">
+          {lists.map(list => (
+            <ListSection
+              key={list.id}
+              list={list}
+              items={itemsByList[list.id] || []}
+              showDelete={lists.length > 1}
+              onRename={handleRenameList}
+              onDelete={handleDeleteList}
+              onAddItem={handleAddItem}
+              onTextChange={handleTextChange}
+              onKeyDown={handleKeyDown}
+              onToggleComplete={handleToggleComplete}
+              setRef={setRef}
+            />
+          ))}
 
-          {/* List tabs */}
-          <div className="tabs-bar">
-            {lists.map(list => (
-              <div key={list.id} className="tab-wrapper">
-                {renamingId === list.id ? (
-                  <input
-                    ref={renameInputRef}
-                    className="tab-rename-input"
-                    value={renameValue}
-                    onChange={e => setRenameValue(e.target.value)}
-                    onBlur={handleRenameSubmit}
-                    onKeyDown={e => {
-                      if (e.key === 'Enter')  handleRenameSubmit();
-                      if (e.key === 'Escape') setRenamingId(null);
-                    }}
-                    style={{ width: `${Math.max(64, renameValue.length * 7.5 + 24)}px` }}
-                  />
-                ) : (
-                  <button
-                    className={`tab${activeListId === list.id ? ' tab-active' : ''}`}
-                    onClick={() => handleSelectList(list.id)}
-                    onDoubleClick={() => handleDoubleClickTab(list.id, list.name)}
-                  >
-                    {list.name}
-                    {activeListId === list.id && lists.length > 1 && (
-                      <span
-                        className="tab-delete"
-                        onClick={e => handleDeleteList(e, list.id)}
-                        title="Delete list"
-                      >
-                        <TrashIcon />
-                      </span>
-                    )}
-                  </button>
-                )}
-              </div>
-            ))}
-            <button className="tab-add" onClick={handleAddList} title="New list">
-              <PlusIcon />
-            </button>
-          </div>
-
-          {/* Items */}
-          <div className="items-area custom-scrollbar">
-            {activeItems.map(item => (
-              <BulletItem
-                key={item.id}
-                itemId={item.id}
-                text={item.text}
-                bold={item.bold}
-                underline={item.underline}
-                depth={item.depth}
-                onTextChange={handleTextChange}
-                onKeyDown={handleKeyDown}
-                onToggleComplete={handleToggleComplete}
-                setRef={setRef}
-              />
-            ))}
-
-            <button className="add-row" onClick={handleAddItem}>
-              <PlusIcon />
-              <span>Add item</span>
-            </button>
-          </div>
-
-          {/* Keyboard hint bar */}
-          <div className="hints">
-            <span>Enter new bullet</span>
-            <span className="hint-sep">·</span>
-            <span>Tab indent</span>
-            <span className="hint-sep">·</span>
-            <span>Shift+Tab outdent</span>
-            <span className="hint-sep">·</span>
-            <span>Ctrl+B bold</span>
-            <span className="hint-sep">·</span>
-            <span>Ctrl+U underline</span>
-            <span className="hint-sep">·</span>
-            <span>Double-click tab to rename</span>
-          </div>
+          <button className="new-list-btn" onClick={handleAddList}>
+            <PlusIcon />
+            New list
+          </button>
         </main>
 
-        {/* Completed sidebar */}
+        {/* Collapsible completed sidebar */}
         <CompletedSidebar
+          open={completedOpen}
           items={completedItems}
           onRestore={handleRestore}
           onClear={handleClear}
         />
+      </div>
+
+      {/* ── Hint bar ── */}
+      <div className="hints">
+        <span>Enter new bullet</span>
+        <span className="hint-sep">·</span>
+        <span>Tab indent</span>
+        <span className="hint-sep">·</span>
+        <span>Shift+Tab outdent</span>
+        <span className="hint-sep">·</span>
+        <span>Ctrl+B bold</span>
+        <span className="hint-sep">·</span>
+        <span>Ctrl+U underline</span>
+        <span className="hint-sep">·</span>
+        <span>Click list name to rename</span>
       </div>
     </div>
   );
