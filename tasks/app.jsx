@@ -61,6 +61,40 @@ const TrashIcon = () => (
     <path d="M9 6V4a1 1 0 0 1 1-1h4a1 1 0 0 1 1 1v2" />
   </svg>
 );
+const GraphIcon = () => (
+  <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2"
+    strokeLinecap="round" strokeLinejoin="round">
+    <circle cx="5"  cy="12" r="2" /><circle cx="19" cy="5"  r="2" />
+    <circle cx="19" cy="19" r="2" /><circle cx="12" cy="12" r="2" />
+    <line x1="7" y1="12" x2="10" y2="12" />
+    <line x1="14" y1="12" x2="17.3" y2="6.7" />
+    <line x1="14" y1="12" x2="17.3" y2="17.3" />
+  </svg>
+);
+
+/* ── Graph constants & utilities ── */
+const GRAPH_COLORS = [
+  '#a78bfa','#34d399','#60a5fa','#f472b6',
+  '#fb923c','#2dd4bf','#a3e635','#e879f9',
+  '#f59e0b','#818cf8',
+];
+const STOPWORDS = new Set([
+  'a','an','the','and','or','but','to','do','is','it','in','of',
+  'for','at','by','with','on','i','my','be','as','this','that',
+  'from','are','was','have','had','has','not','if','then','when',
+  'we','you','get','got','can','will','just','up','out','so','its',
+]);
+const tokenize = t => t.toLowerCase().split(/\W+/).filter(w => w.length > 2 && !STOPWORDS.has(w));
+const jaccardSim = (a, b) => {
+  const sa = new Set(tokenize(a)), sb = new Set(tokenize(b));
+  if (!sa.size || !sb.size) return 0;
+  const inter = [...sa].filter(w => sb.has(w)).length;
+  return inter / new Set([...sa, ...sb]).size;
+};
+const hexToRgb = h => {
+  const n = parseInt(h.slice(1), 16);
+  return `${(n>>16)&255},${(n>>8)&255},${n&255}`;
+};
 
 /* ── BulletItem ── */
 const BulletItem = React.memo(function BulletItem({
@@ -234,11 +268,243 @@ const CompletedSidebar = React.memo(function CompletedSidebar({ open, items, onR
   );
 });
 
+/* ── GraphView (canvas + D3 force) ── */
+const GraphView = ({ lists, items }) => {
+  const containerRef = useRef(null);
+  const canvasRef    = useRef(null);
+  const itemMapRef   = useRef({});
+  useEffect(() => {
+    itemMapRef.current = Object.fromEntries(items.map(i => [i.id, i]));
+  }, [items]);
+
+  const colorMap = useMemo(() => {
+    const m = {};
+    lists.forEach((l, i) => { m[l.id] = GRAPH_COLORS[i % GRAPH_COLORS.length]; });
+    return m;
+  }, [lists]);
+
+  useEffect(() => {
+    if (typeof d3 === 'undefined') return;
+    const container = containerRef.current;
+    const canvas    = canvasRef.current;
+    if (!container || !canvas) return;
+
+    const W = container.clientWidth, H = container.clientHeight;
+    const dpr = window.devicePixelRatio || 1;
+    canvas.width  = W * dpr; canvas.height = H * dpr;
+    canvas.style.width = W + 'px'; canvas.style.height = H + 'px';
+    const ctx = canvas.getContext('2d');
+    ctx.scale(dpr, dpr);
+
+    const active = items.filter(i => !i.completed && i.text.trim());
+
+    // Empty state
+    if (!active.length) {
+      ctx.fillStyle = '#07070d';
+      ctx.fillRect(0, 0, W, H);
+      ctx.font = '16px Inter,sans-serif';
+      ctx.fillStyle = 'rgba(167,139,250,0.3)';
+      ctx.textAlign = 'center'; ctx.textBaseline = 'middle';
+      ctx.fillText('Add tasks to see the graph', W/2, H/2);
+      return;
+    }
+
+    // List cluster centres
+    const cx = W/2, cy = H/2;
+    const cr = Math.min(W, H) * (lists.length === 1 ? 0 : 0.27);
+    const listCenters = {};
+    lists.forEach((l, i) => {
+      const a = (i / lists.length) * Math.PI * 2 - Math.PI / 2;
+      listCenters[l.id] = { x: cx + Math.cos(a)*cr, y: cy + Math.sin(a)*cr };
+    });
+
+    // Nodes
+    const simNodes = active.map(item => {
+      const c = listCenters[item.listId] || { x: cx, y: cy };
+      return { id: item.id, listId: item.listId,
+        color: colorMap[item.listId] || '#a78bfa',
+        x: c.x + (Math.random()-.5)*70, y: c.y + (Math.random()-.5)*70, vx:0, vy:0 };
+    });
+    const nodeMap = Object.fromEntries(simNodes.map(n => [n.id, n]));
+
+    // Edges
+    const linkData = [];
+    lists.forEach(list => {
+      const ln = simNodes.filter(n => n.listId === list.id);
+      for (let i = 0; i < ln.length - 1; i++)
+        linkData.push({ source: ln[i].id, target: ln[i+1].id, type: 'chain', strength: 0.35 });
+    });
+    for (let i = 0; i < active.length; i++) {
+      for (let j = i+1; j < active.length; j++) {
+        if (active[i].listId === active[j].listId) continue;
+        const sim = jaccardSim(active[i].text, active[j].text);
+        if (sim > 0.08) linkData.push({
+          source: active[i].id, target: active[j].id,
+          type: 'sim', strength: sim * 0.55,
+          cd: Math.random() > .5 ? 1 : -1,
+        });
+      }
+    }
+
+    // Transform & hover state
+    const tr = { x:0, y:0, k:1 };
+    let hov = null, drag = false, ds = null;
+
+    // D3 simulation
+    const sim = d3.forceSimulation(simNodes)
+      .force('link', d3.forceLink(linkData.map(e=>({...e})))
+        .id(d => d.id).strength(d => d.strength)
+        .distance(d => d.type === 'sim' ? 155 : 68))
+      .force('charge', d3.forceManyBody().strength(-190))
+      .force('collide', d3.forceCollide(22))
+      .force('cluster', alpha => {
+        simNodes.forEach(n => {
+          const c = listCenters[n.listId]; if (!c) return;
+          n.vx -= (n.x - c.x) * 0.045 * alpha;
+          n.vy -= (n.y - c.y) * 0.045 * alpha;
+        });
+      })
+      .velocityDecay(0.35).alphaDecay(0.028)
+      .on('tick', render);
+
+    function rr(c,x,y,w,h,r) {
+      c.beginPath(); c.moveTo(x+r,y); c.lineTo(x+w-r,y);
+      c.arcTo(x+w,y,x+w,y+r,r); c.lineTo(x+w,y+h-r);
+      c.arcTo(x+w,y+h,x+w-r,y+h,r); c.lineTo(x+r,y+h);
+      c.arcTo(x,y+h,x,y+h-r,r); c.lineTo(x,y+r);
+      c.arcTo(x,y,x+r,y,r); c.closePath();
+    }
+
+    function render() {
+      ctx.clearRect(0,0,W,H);
+      ctx.fillStyle = '#07070d'; ctx.fillRect(0,0,W,H);
+
+      // Dot grid
+      const gs = 28*tr.k;
+      const ox = ((tr.x%gs)+gs)%gs, oy = ((tr.y%gs)+gs)%gs;
+      ctx.fillStyle = 'rgba(167,139,250,0.045)';
+      for (let gx=ox; gx<W; gx+=gs)
+        for (let gy=oy; gy<H; gy+=gs) {
+          ctx.beginPath(); ctx.arc(gx,gy,1.1,0,Math.PI*2); ctx.fill();
+        }
+
+      ctx.save(); ctx.translate(tr.x,tr.y); ctx.scale(tr.k,tr.k);
+
+      // Halos
+      Object.entries(listCenters).forEach(([lid,c]) => {
+        const rgb = hexToRgb(colorMap[lid]||'#a78bfa');
+        const g = ctx.createRadialGradient(c.x,c.y,0,c.x,c.y,115);
+        g.addColorStop(0,`rgba(${rgb},.11)`); g.addColorStop(.6,`rgba(${rgb},.04)`); g.addColorStop(1,`rgba(${rgb},0)`);
+        ctx.fillStyle=g; ctx.beginPath(); ctx.arc(c.x,c.y,115,0,Math.PI*2); ctx.fill();
+      });
+
+      // Edges
+      linkData.forEach(e => {
+        const s = typeof e.source==='object'?e.source:nodeMap[e.source];
+        const t = typeof e.target==='object'?e.target:nodeMap[e.target];
+        if (!s||!t||isNaN(s.x)||isNaN(t.x)) return;
+        ctx.beginPath();
+        if (e.type==='sim') {
+          const dx=t.x-s.x, dy=t.y-s.y, len=Math.sqrt(dx*dx+dy*dy)||1, p=28*(e.cd||1);
+          ctx.moveTo(s.x,s.y);
+          ctx.quadraticCurveTo((s.x+t.x)/2-(dy/len)*p,(s.y+t.y)/2+(dx/len)*p,t.x,t.y);
+          const sg=ctx.createLinearGradient(s.x,s.y,t.x,t.y);
+          sg.addColorStop(0,`rgba(${hexToRgb(s.color)},${e.strength*.8})`);
+          sg.addColorStop(1,`rgba(${hexToRgb(t.color)},${e.strength*.8})`);
+          ctx.strokeStyle=sg; ctx.lineWidth=1+e.strength*1.5;
+        } else {
+          ctx.moveTo(s.x,s.y); ctx.lineTo(t.x,t.y);
+          ctx.strokeStyle=`rgba(${hexToRgb(s.color)},.15)`; ctx.lineWidth=.85;
+        }
+        ctx.stroke();
+      });
+
+      // Nodes
+      simNodes.forEach(n => {
+        if (isNaN(n.x)||isNaN(n.y)) return;
+        const isH = hov===n.id, r = isH?9:7, rgb=hexToRgb(n.color);
+        const gl=ctx.createRadialGradient(n.x,n.y,0,n.x,n.y,r*4);
+        gl.addColorStop(0,`rgba(${rgb},.28)`); gl.addColorStop(1,`rgba(${rgb},0)`);
+        ctx.fillStyle=gl; ctx.beginPath(); ctx.arc(n.x,n.y,r*4,0,Math.PI*2); ctx.fill();
+        ctx.shadowBlur=isH?20:12; ctx.shadowColor=n.color;
+        ctx.fillStyle=n.color; ctx.beginPath(); ctx.arc(n.x,n.y,r,0,Math.PI*2); ctx.fill();
+        ctx.shadowBlur=0;
+        ctx.fillStyle='rgba(255,255,255,.42)';
+        ctx.beginPath(); ctx.arc(n.x-r*.28,n.y-r*.3,r*.3,0,Math.PI*2); ctx.fill();
+        if (isH) {
+          const item = itemMapRef.current[n.id];
+          const lbl = item ? (item.text.length>38?item.text.slice(0,38)+'…':item.text) : '';
+          if (lbl) {
+            ctx.font='13px Inter,sans-serif';
+            const tw=ctx.measureText(lbl).width, pd=9, bh=24, br=6;
+            const bx=n.x-tw/2-pd, by=n.y-r-bh-8;
+            ctx.fillStyle='rgba(10,7,22,.92)'; rr(ctx,bx,by,tw+pd*2,bh,br); ctx.fill();
+            ctx.strokeStyle=`rgba(${rgb},.45)`; ctx.lineWidth=1; rr(ctx,bx,by,tw+pd*2,bh,br); ctx.stroke();
+            ctx.fillStyle=n.color; ctx.textAlign='center'; ctx.textBaseline='middle';
+            ctx.fillText(lbl,n.x,by+bh/2); ctx.textAlign='left'; ctx.textBaseline='alphabetic';
+          }
+        }
+      });
+      ctx.restore();
+    }
+
+    // Interactions
+    const getW = (cx,cy) => { const rc=canvas.getBoundingClientRect();
+      return { x:(cx-rc.left-tr.x)/tr.k, y:(cy-rc.top-tr.y)/tr.k }; };
+    const hit = (wx,wy) => { for (const n of simNodes) { if (isNaN(n.x)) continue;
+      const dx=wx-n.x,dy=wy-n.y; if (dx*dx+dy*dy<144) return n.id; } return null; };
+
+    const onMM = e => {
+      const rc=canvas.getBoundingClientRect(), mx=e.clientX-rc.left, my=e.clientY-rc.top;
+      if (drag) { tr.x+=mx-ds.x; tr.y+=my-ds.y; ds={x:mx,y:my}; render(); return; }
+      const {x:wx,y:wy}=getW(e.clientX,e.clientY), h=hit(wx,wy);
+      if (h!==hov) { hov=h; canvas.style.cursor=h?'pointer':'grab'; render(); }
+    };
+    const onMD = e => { if (e.button) return;
+      const rc=canvas.getBoundingClientRect(); drag=true;
+      ds={x:e.clientX-rc.left,y:e.clientY-rc.top}; canvas.style.cursor='grabbing'; };
+    const onMU = () => { drag=false; canvas.style.cursor=hov?'pointer':'grab'; };
+    const onWH = e => {
+      e.preventDefault(); const rc=canvas.getBoundingClientRect();
+      const mx=e.clientX-rc.left, my=e.clientY-rc.top;
+      const f=e.deltaY>0?.88:1.13, nk=Math.max(.15,Math.min(6,tr.k*f));
+      tr.x=mx-(mx-tr.x)*(nk/tr.k); tr.y=my-(my-tr.y)*(nk/tr.k); tr.k=nk; render();
+    };
+    canvas.addEventListener('mousemove',onMM); canvas.addEventListener('mousedown',onMD);
+    canvas.addEventListener('mouseup',onMU);   canvas.addEventListener('mouseleave',onMU);
+    canvas.addEventListener('wheel',onWH,{passive:false});
+    canvas.style.cursor='grab'; render();
+
+    return () => {
+      sim.stop();
+      canvas.removeEventListener('mousemove',onMM); canvas.removeEventListener('mousedown',onMD);
+      canvas.removeEventListener('mouseup',onMU);   canvas.removeEventListener('mouseleave',onMU);
+      canvas.removeEventListener('wheel',onWH);
+    };
+  }, []); // snapshot on mount — re-open graph to refresh
+
+  return (
+    <div ref={containerRef} className="graph-container">
+      <canvas ref={canvasRef} />
+      <div className="graph-legend">
+        {lists.map((l,i) => (
+          <div key={l.id} className="graph-legend-item">
+            <span className="graph-legend-dot" style={{ background: GRAPH_COLORS[i % GRAPH_COLORS.length] }} />
+            <span>{l.name}</span>
+          </div>
+        ))}
+      </div>
+      <div className="graph-hint">Scroll to zoom · Drag to pan · Hover nodes to see task</div>
+    </div>
+  );
+};
+
 /* ── Main App ── */
 const App = () => {
   const [lists, setLists] = useLocalStorage('rimico-tasks-lists', DEFAULT_LISTS);
   const [items, setItems] = useLocalStorage('rimico-tasks-items', []);
   const [completedOpen, setCompletedOpen] = useState(false);
+  const [graphView, setGraphView] = useState(false);
 
   const refsMap  = useRef({});
   const itemsRef = useRef(items);
@@ -416,6 +682,14 @@ const App = () => {
         </div>
         <div className="header-right">
           <button
+            className={`graph-toggle${graphView ? ' graph-toggle-active' : ''}`}
+            onClick={() => setGraphView(v => !v)}
+            title="Toggle graph view"
+          >
+            <GraphIcon />
+            Graph
+          </button>
+          <button
             className={`done-toggle${completedOpen ? ' done-toggle-active' : ''}`}
             onClick={() => setCompletedOpen(v => !v)}
           >
@@ -436,42 +710,47 @@ const App = () => {
 
       {/* ── Body ── */}
       <div className="body">
+        {graphView ? (
+          <GraphView lists={lists} items={items} />
+        ) : (
+          <>
+            {/* Scrollable lists area */}
+            <main className="main custom-scrollbar">
+              {lists.map(list => (
+                <ListSection
+                  key={list.id}
+                  list={list}
+                  items={itemsByList[list.id] || []}
+                  showDelete={lists.length > 1}
+                  onRename={handleRenameList}
+                  onDelete={handleDeleteList}
+                  onAddItem={handleAddItem}
+                  onTextChange={handleTextChange}
+                  onKeyDown={handleKeyDown}
+                  onToggleComplete={handleToggleComplete}
+                  setRef={setRef}
+                />
+              ))}
 
-        {/* Scrollable lists area */}
-        <main className="main custom-scrollbar">
-          {lists.map(list => (
-            <ListSection
-              key={list.id}
-              list={list}
-              items={itemsByList[list.id] || []}
-              showDelete={lists.length > 1}
-              onRename={handleRenameList}
-              onDelete={handleDeleteList}
-              onAddItem={handleAddItem}
-              onTextChange={handleTextChange}
-              onKeyDown={handleKeyDown}
-              onToggleComplete={handleToggleComplete}
-              setRef={setRef}
+              <button className="new-list-btn" onClick={handleAddList}>
+                <PlusIcon />
+                New list
+              </button>
+            </main>
+
+            {/* Collapsible completed sidebar */}
+            <CompletedSidebar
+              open={completedOpen}
+              items={completedItems}
+              onRestore={handleRestore}
+              onClear={handleClear}
             />
-          ))}
-
-          <button className="new-list-btn" onClick={handleAddList}>
-            <PlusIcon />
-            New list
-          </button>
-        </main>
-
-        {/* Collapsible completed sidebar */}
-        <CompletedSidebar
-          open={completedOpen}
-          items={completedItems}
-          onRestore={handleRestore}
-          onClear={handleClear}
-        />
+          </>
+        )}
       </div>
 
       {/* ── Hint bar ── */}
-      <div className="hints">
+      {!graphView && <div className="hints">
         <span>Enter new bullet</span>
         <span className="hint-sep">·</span>
         <span>Tab indent</span>
@@ -483,7 +762,7 @@ const App = () => {
         <span>Ctrl+U underline</span>
         <span className="hint-sep">·</span>
         <span>Click list name to rename</span>
-      </div>
+      </div>}
     </div>
   );
 };
