@@ -24,6 +24,30 @@ const makeBlankItem = (listId) => ({
   depth: 0, listId, completed: false, completedAt: null,
 });
 
+/* ── Graph constants & utilities ── */
+const GRAPH_COLORS = [
+  '#a78bfa','#34d399','#60a5fa','#f472b6',
+  '#fb923c','#2dd4bf','#a3e635','#e879f9',
+  '#f59e0b','#818cf8',
+];
+const STOPWORDS = new Set([
+  'a','an','the','and','or','but','to','do','is','it','in','of',
+  'for','at','by','with','on','i','my','be','as','this','that',
+  'from','are','was','have','had','has','not','if','then','when',
+  'we','you','get','got','can','will','just','up','out','so','its',
+]);
+const tokenize = t => t.toLowerCase().split(/\W+/).filter(w => w.length > 2 && !STOPWORDS.has(w));
+const jaccardSim = (a, b) => {
+  const sa = new Set(tokenize(a)), sb = new Set(tokenize(b));
+  if (!sa.size || !sb.size) return 0;
+  const inter = [...sa].filter(w => sb.has(w)).length;
+  return inter / new Set([...sa, ...sb]).size;
+};
+const hexToRgb = h => {
+  const n = parseInt(h.slice(1), 16);
+  return `${(n>>16)&255},${(n>>8)&255},${n&255}`;
+};
+
 const DEFAULT_LIST_ID = 'default';
 const DEFAULT_LISTS   = [{ id: DEFAULT_LIST_ID, name: 'Tasks', color: GRAPH_COLORS[0] }];
 const getListColor = (list, idx) => list.color || GRAPH_COLORS[idx % GRAPH_COLORS.length];
@@ -99,30 +123,6 @@ const GraphIcon = () => (
     <line x1="14" y1="12" x2="17.3" y2="17.3" />
   </svg>
 );
-
-/* ── Graph constants & utilities ── */
-const GRAPH_COLORS = [
-  '#a78bfa','#34d399','#60a5fa','#f472b6',
-  '#fb923c','#2dd4bf','#a3e635','#e879f9',
-  '#f59e0b','#818cf8',
-];
-const STOPWORDS = new Set([
-  'a','an','the','and','or','but','to','do','is','it','in','of',
-  'for','at','by','with','on','i','my','be','as','this','that',
-  'from','are','was','have','had','has','not','if','then','when',
-  'we','you','get','got','can','will','just','up','out','so','its',
-]);
-const tokenize = t => t.toLowerCase().split(/\W+/).filter(w => w.length > 2 && !STOPWORDS.has(w));
-const jaccardSim = (a, b) => {
-  const sa = new Set(tokenize(a)), sb = new Set(tokenize(b));
-  if (!sa.size || !sb.size) return 0;
-  const inter = [...sa].filter(w => sb.has(w)).length;
-  return inter / new Set([...sa, ...sb]).size;
-};
-const hexToRgb = h => {
-  const n = parseInt(h.slice(1), 16);
-  return `${(n>>16)&255},${(n>>8)&255},${n&255}`;
-};
 
 /* ── BulletItem ── */
 const BulletItem = React.memo(function BulletItem({
