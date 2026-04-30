@@ -25,7 +25,8 @@ const makeBlankItem = (listId) => ({
 });
 
 const DEFAULT_LIST_ID = 'default';
-const DEFAULT_LISTS   = [{ id: DEFAULT_LIST_ID, name: 'Tasks' }];
+const DEFAULT_LISTS   = [{ id: DEFAULT_LIST_ID, name: 'Tasks', color: GRAPH_COLORS[0] }];
+const getListColor = (list, idx) => list.color || GRAPH_COLORS[idx % GRAPH_COLORS.length];
 
 /* ── Icons ── */
 const CheckIcon = () => (
@@ -59,6 +60,33 @@ const TrashIcon = () => (
     <path d="M19 6l-1 14a2 2 0 0 1-2 2H8a2 2 0 0 1-2-2L5 6" />
     <path d="M10 11v6M14 11v6" />
     <path d="M9 6V4a1 1 0 0 1 1-1h4a1 1 0 0 1 1 1v2" />
+  </svg>
+);
+const DragHandleIcon = () => (
+  <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.2" strokeLinecap="round">
+    <line x1="4" y1="8" x2="20" y2="8" /><line x1="4" y1="16" x2="20" y2="16" />
+  </svg>
+);
+const TimerIcon = () => (
+  <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
+    <circle cx="12" cy="12" r="10" /><polyline points="12 6 12 12 16 14" />
+  </svg>
+);
+const ExpandIcon = () => (
+  <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
+    <polyline points="15 3 21 3 21 9" /><polyline points="9 21 3 21 3 15" />
+    <line x1="21" y1="3" x2="14" y2="10" /><line x1="3" y1="21" x2="10" y2="14" />
+  </svg>
+);
+const CollapseIcon = () => (
+  <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
+    <polyline points="4 14 10 14 10 20" /><polyline points="20 10 14 10 14 4" />
+    <line x1="10" y1="14" x2="3" y2="21" /><line x1="21" y1="3" x2="14" y2="10" />
+  </svg>
+);
+const XIcon = () => (
+  <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round">
+    <line x1="18" y1="6" x2="6" y2="18" /><line x1="6" y1="6" x2="18" y2="18" />
   </svg>
 );
 const GraphIcon = () => (
@@ -144,13 +172,15 @@ const BulletItem = React.memo(function BulletItem({
 
 /* ── ListSection ── */
 const ListSection = React.memo(function ListSection({
-  list, items, showDelete,
-  onRename, onDelete, onAddItem,
+  list, items, showDelete, color, isDragOver,
+  onRename, onDelete, onAddItem, onSetColor,
   onTextChange, onKeyDown, onToggleComplete, setRef,
+  onDragStart, onDragOver, onDrop, onDragEnd,
 }) {
   const [editing, setEditing] = useState(false);
   const [nameVal, setNameVal] = useState(list.name);
-  const nameInputRef = useRef(null);
+  const nameInputRef  = useRef(null);
+  const colorInputRef = useRef(null);
 
   useEffect(() => { setNameVal(list.name); }, [list.name]);
   useEffect(() => {
@@ -165,8 +195,20 @@ const ListSection = React.memo(function ListSection({
   }, [nameVal, list.id, list.name, onRename]);
 
   return (
-    <section className="list-section">
+    <section
+      className="list-section"
+      style={{ '--lc': color }}
+      draggable
+      data-drag-over={isDragOver ? 'true' : 'false'}
+      onDragStart={e => { e.dataTransfer.effectAllowed = 'move'; onDragStart(list.id); }}
+      onDragOver={e => { e.preventDefault(); e.dataTransfer.dropEffect = 'move'; onDragOver(list.id); }}
+      onDrop={e => { e.preventDefault(); onDrop(list.id); }}
+      onDragEnd={onDragEnd}
+    >
       <div className="list-header group">
+        {/* Drag handle */}
+        <span className="drag-handle"><DragHandleIcon /></span>
+
         {editing ? (
           <input
             ref={nameInputRef}
@@ -183,11 +225,32 @@ const ListSection = React.memo(function ListSection({
           <h2
             className="list-name"
             onClick={() => setEditing(true)}
+            style={{ color }}
             title="Click to rename"
           >
             {list.name}
           </h2>
         )}
+
+        {/* Color swatch */}
+        {!editing && (
+          <>
+            <button
+              className="list-color-btn"
+              style={{ background: color }}
+              onClick={() => colorInputRef.current && colorInputRef.current.click()}
+              title="Change section colour"
+            />
+            <input
+              ref={colorInputRef}
+              type="color"
+              value={color}
+              style={{ position: 'absolute', opacity: 0, pointerEvents: 'none', width: 0, height: 0 }}
+              onChange={e => onSetColor(list.id, e.target.value)}
+            />
+          </>
+        )}
+
         {showDelete && !editing && (
           <button
             className="list-delete-btn"
@@ -279,7 +342,7 @@ const GraphView = ({ lists, items }) => {
 
   const colorMap = useMemo(() => {
     const m = {};
-    lists.forEach((l, i) => { m[l.id] = GRAPH_COLORS[i % GRAPH_COLORS.length]; });
+    lists.forEach((l, i) => { m[l.id] = getListColor(l, i); });
     return m;
   }, [lists]);
 
@@ -499,12 +562,169 @@ const GraphView = ({ lists, items }) => {
   );
 };
 
+/* ── Study Timer ── */
+const suggestBreak = m => m <= 15 ? 3 : m <= 30 ? 5 : m <= 60 ? 10 : m <= 90 ? 15 : 20;
+
+const StudyTimer = ({ expanded, onToggleExpand, onClose }) => {
+  const [inputVal, setInputVal]   = useState('25');
+  const [totalSecs, setTotalSecs] = useState(25 * 60);
+  const [secsLeft, setSecsLeft]   = useState(25 * 60);
+  const [running, setRunning]     = useState(false);
+  const [phase, setPhase]         = useState('idle'); // idle|work|breakSuggest|break|done
+  const [workMins, setWorkMins]   = useState(25);
+  const phaseRef = useRef('idle');
+
+  const syncPhase = p => { phaseRef.current = p; setPhase(p); };
+
+  useEffect(() => {
+    if (!running) return;
+    const id = setInterval(() => {
+      setSecsLeft(prev => {
+        if (prev <= 1) {
+          clearInterval(id);
+          setTimeout(() => {
+            setRunning(false);
+            if (phaseRef.current === 'work')  syncPhase('breakSuggest');
+            else if (phaseRef.current === 'break') syncPhase('done');
+          }, 0);
+          return 0;
+        }
+        return prev - 1;
+      });
+    }, 1000);
+    return () => clearInterval(id);
+  }, [running]);
+
+  const applyTime = () => {
+    const m = Math.max(1, Math.min(180, parseInt(inputVal, 10) || 25));
+    const s = m * 60;
+    setInputVal(String(m));
+    setTotalSecs(s); setSecsLeft(s); setWorkMins(m);
+    setRunning(false); syncPhase('idle');
+  };
+
+  const handleStart     = () => { syncPhase('work'); setRunning(true); };
+  const handlePause     = () => setRunning(false);
+  const handleReset     = () => { setRunning(false); setSecsLeft(totalSecs); syncPhase('idle'); };
+  const handleTakeBreak = () => {
+    const bs = suggestBreak(workMins) * 60;
+    setTotalSecs(bs); setSecsLeft(bs); syncPhase('break'); setRunning(true);
+  };
+  const handleSkipBreak = () => { setSecsLeft(workMins * 60); setTotalSecs(workMins * 60); syncPhase('idle'); setRunning(false); };
+  const handleNewSession = handleSkipBreak;
+
+  const mm  = String(Math.floor(secsLeft / 60)).padStart(2, '0');
+  const ss  = String(secsLeft % 60).padStart(2, '0');
+  const R   = 76, circ = +(2 * Math.PI * R).toFixed(2);
+  const pct = totalSecs > 0 ? (totalSecs - secsLeft) / totalSecs : 0;
+  const off = +(circ * (1 - pct)).toFixed(2);
+  const isBreak = phase === 'break';
+  const ringColor = isBreak ? '#34d399' : '#a78bfa';
+
+  const phaseLabel =
+    phase === 'work'  ? 'Focus' : phase === 'break' ? 'Break' :
+    phase === 'done'  ? 'Done!' : 'Ready';
+
+  return (
+    <div className={`timer-panel${expanded ? ' expanded' : ''}`}>
+      <div className="timer-close-row">
+        <span className="timer-phase-label">{phaseLabel}</span>
+        <div style={{ display:'flex', gap:'3px' }}>
+          <button className="timer-icon-btn" onClick={onToggleExpand} title={expanded ? 'Collapse' : 'Expand'}>
+            {expanded ? <CollapseIcon /> : <ExpandIcon />}
+          </button>
+          <button className="timer-icon-btn" onClick={onClose} title="Close timer"><XIcon /></button>
+        </div>
+      </div>
+
+      <div className="timer-inner">
+        {/* Ring */}
+        <div className="timer-ring-wrap">
+          <svg className="timer-ring-svg" width="190" height="190" viewBox="0 0 190 190">
+            <circle className="timer-ring-bg"   cx="95" cy="95" r={R} strokeWidth="6" />
+            <circle className="timer-ring-fill" cx="95" cy="95" r={R} strokeWidth="6"
+              stroke={ringColor}
+              strokeDasharray={`${circ}`}
+              strokeDashoffset={`${off}`}
+            />
+          </svg>
+          <span className="timer-display">{mm}:{ss}</span>
+        </div>
+
+        {/* Break suggestion */}
+        {phase === 'breakSuggest' && (
+          <div className="timer-break-box">
+            <div className="timer-break-title">Session complete!</div>
+            <div className="timer-break-sub">
+              You focused for {workMins} min.<br />
+              Take a {suggestBreak(workMins)}-minute break?
+            </div>
+            <div className="timer-controls">
+              <button className="timer-ctrl-btn primary" onClick={handleTakeBreak}>
+                Break · {suggestBreak(workMins)}min
+              </button>
+              <button className="timer-ctrl-btn secondary" onClick={handleSkipBreak}>Skip</button>
+            </div>
+          </div>
+        )}
+
+        {/* Done */}
+        {phase === 'done' && (
+          <div className="timer-break-box">
+            <div className="timer-break-title">Break over!</div>
+            <div className="timer-break-sub">Ready for the next session?</div>
+            <div className="timer-controls">
+              <button className="timer-ctrl-btn primary" onClick={handleNewSession}>New session</button>
+            </div>
+          </div>
+        )}
+
+        {/* Work / idle / break controls */}
+        {(phase === 'idle' || phase === 'work' || phase === 'break') && (
+          <>
+            {phase !== 'break' && (
+              <div className="timer-input-row">
+                <input
+                  type="number" min="1" max="180"
+                  className="timer-mins-input"
+                  value={inputVal}
+                  onChange={e => setInputVal(e.target.value)}
+                  onBlur={applyTime}
+                  onKeyDown={e => e.key === 'Enter' && applyTime()}
+                  disabled={running}
+                />
+                <span className="timer-mins-label">min</span>
+                {!running && phase === 'idle' && (
+                  <button className="timer-set-btn" onClick={applyTime}>Set</button>
+                )}
+              </div>
+            )}
+            <div className="timer-controls">
+              {!running
+                ? <button className="timer-ctrl-btn primary" onClick={handleStart} disabled={secsLeft === 0}>
+                    {phase === 'idle' ? 'Start' : 'Resume'}
+                  </button>
+                : <button className="timer-ctrl-btn primary" onClick={handlePause}>Pause</button>
+              }
+              <button className="timer-ctrl-btn secondary" onClick={handleReset}>Reset</button>
+            </div>
+          </>
+        )}
+      </div>
+    </div>
+  );
+};
+
 /* ── Main App ── */
 const App = () => {
   const [lists, setLists] = useLocalStorage('rimico-tasks-lists', DEFAULT_LISTS);
   const [items, setItems] = useLocalStorage('rimico-tasks-items', []);
   const [completedOpen, setCompletedOpen] = useState(false);
   const [graphView, setGraphView] = useState(false);
+  const [timerOpen, setTimerOpen]         = useState(false);
+  const [timerExpanded, setTimerExpanded] = useState(false);
+  const [dragId, setDragId]               = useState(null);
+  const [dragOverId, setDragOverId]       = useState(null);
 
   const refsMap  = useRef({});
   const itemsRef = useRef(items);
@@ -654,7 +874,10 @@ const App = () => {
   const handleAddList = useCallback(() => {
     const newListId = genId();
     const newItem   = makeBlankItem(newListId);
-    setLists(prev => [...prev, { id: newListId, name: 'New list' }]);
+    setLists(prev => {
+      const color = GRAPH_COLORS[prev.length % GRAPH_COLORS.length];
+      return [...prev, { id: newListId, name: 'New list', color }];
+    });
     setItems(prev => [...prev, newItem]);
   }, [setLists, setItems]);
 
@@ -670,6 +893,33 @@ const App = () => {
     setItems(prev => prev.filter(i => i.listId !== id));
   }, [setLists, setItems]);
 
+  const handleSetListColor = useCallback((id, color) => {
+    setLists(prev => prev.map(l => l.id === id ? { ...l, color } : l));
+  }, [setLists]);
+
+  const handleDragStart = useCallback((id) => setDragId(id), []);
+  const handleDragOver  = useCallback((id) => setDragOverId(id), []);
+  const dragIdRef = useRef(null);
+  useEffect(() => { dragIdRef.current = dragId; }, [dragId]);
+
+  const handleDrop = useCallback((targetId) => {
+    const srcId = dragIdRef.current;
+    if (srcId && srcId !== targetId) {
+      setLists(prev => {
+        const from = prev.findIndex(l => l.id === srcId);
+        const to   = prev.findIndex(l => l.id === targetId);
+        if (from === -1 || to === -1) return prev;
+        const next = [...prev];
+        const [item] = next.splice(from, 1);
+        next.splice(to, 0, item);
+        return next;
+      });
+    }
+    setDragId(null);
+    setDragOverId(null);
+  }, [setLists]);
+  const handleDragEnd = useCallback(() => { setDragId(null); setDragOverId(null); }, []);
+
   return (
     <div className="root">
 
@@ -681,6 +931,14 @@ const App = () => {
           <span className="header-title">Tasks</span>
         </div>
         <div className="header-right">
+          <button
+            className={`timer-toggle${timerOpen ? ' timer-toggle-active' : ''}`}
+            onClick={() => { setTimerOpen(v => !v); if (timerOpen) setTimerExpanded(false); }}
+            title="Study timer"
+          >
+            <TimerIcon />
+            Timer
+          </button>
           <button
             className={`graph-toggle${graphView ? ' graph-toggle-active' : ''}`}
             onClick={() => setGraphView(v => !v)}
@@ -710,42 +968,57 @@ const App = () => {
 
       {/* ── Body ── */}
       <div className="body">
-        {graphView ? (
-          <GraphView lists={lists} items={items} />
-        ) : (
-          <>
-            {/* Scrollable lists area */}
-            <main className="main custom-scrollbar">
-              {lists.map(list => (
-                <ListSection
-                  key={list.id}
-                  list={list}
-                  items={itemsByList[list.id] || []}
-                  showDelete={lists.length > 1}
-                  onRename={handleRenameList}
-                  onDelete={handleDeleteList}
-                  onAddItem={handleAddItem}
-                  onTextChange={handleTextChange}
-                  onKeyDown={handleKeyDown}
-                  onToggleComplete={handleToggleComplete}
-                  setRef={setRef}
-                />
-              ))}
+        {timerOpen && (
+          <StudyTimer
+            expanded={timerExpanded}
+            onToggleExpand={() => setTimerExpanded(v => !v)}
+            onClose={() => { setTimerOpen(false); setTimerExpanded(false); }}
+          />
+        )}
 
-              <button className="new-list-btn" onClick={handleAddList}>
-                <PlusIcon />
-                New list
-              </button>
-            </main>
+        {(!timerOpen || !timerExpanded) && (
+          graphView ? (
+            <GraphView lists={lists} items={items} />
+          ) : (
+            <div className="task-area">
+              <main className="main custom-scrollbar">
+                {lists.map((list, idx) => (
+                  <ListSection
+                    key={list.id}
+                    list={list}
+                    items={itemsByList[list.id] || []}
+                    showDelete={lists.length > 1}
+                    color={getListColor(list, idx)}
+                    isDragOver={dragOverId === list.id}
+                    onRename={handleRenameList}
+                    onDelete={handleDeleteList}
+                    onAddItem={handleAddItem}
+                    onSetColor={handleSetListColor}
+                    onTextChange={handleTextChange}
+                    onKeyDown={handleKeyDown}
+                    onToggleComplete={handleToggleComplete}
+                    setRef={setRef}
+                    onDragStart={handleDragStart}
+                    onDragOver={handleDragOver}
+                    onDrop={handleDrop}
+                    onDragEnd={handleDragEnd}
+                  />
+                ))}
 
-            {/* Collapsible completed sidebar */}
-            <CompletedSidebar
-              open={completedOpen}
-              items={completedItems}
-              onRestore={handleRestore}
-              onClear={handleClear}
-            />
-          </>
+                <button className="new-list-btn" onClick={handleAddList}>
+                  <PlusIcon />
+                  New list
+                </button>
+              </main>
+
+              <CompletedSidebar
+                open={completedOpen}
+                items={completedItems}
+                onRestore={handleRestore}
+                onClear={handleClear}
+              />
+            </div>
+          )
         )}
       </div>
 
